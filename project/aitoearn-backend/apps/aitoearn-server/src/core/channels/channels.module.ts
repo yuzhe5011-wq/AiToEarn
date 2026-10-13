@@ -30,6 +30,8 @@ import { PublishTaskController } from './publish/tasks/publish-task.controller'
 import { PublishTaskService } from './publish/tasks/publish-task.service'
 import { RelayCallbackController } from './relay/relay-callback.controller'
 import { RelayClientService } from './relay/relay-client.service'
+import { TopicSearchController } from './topics/topic-search.controller'
+import { TopicSearchService } from './topics/topic-search.service'
 import { WorkService } from './works/work.service'
 import { WorksController } from './works/works.controller'
 
@@ -48,6 +50,7 @@ import { WorksController } from './works/works.controller'
     EngagementController,
     WorksController,
     RelayCallbackController,
+    TopicSearchController,
   ],
   providers: [
     // Accounts
@@ -70,6 +73,7 @@ import { WorksController } from './works/works.controller'
     PublishScheduler,
     // Analytics
     AnalyticsService,
+    TopicSearchService,
     // Engagement
     EngagementService,
     // Works
