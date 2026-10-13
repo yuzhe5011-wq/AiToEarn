@@ -42,7 +42,7 @@ export interface SocialAccount {
  */
 export interface CreateChannelAccountParams {
   type: PlatType
-  uid: string
+  uid?: string
   nickname: string
   loginCookie?: string
   avatar?: string

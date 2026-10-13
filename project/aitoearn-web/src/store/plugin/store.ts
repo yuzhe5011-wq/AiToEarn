@@ -694,9 +694,10 @@ export const usePluginStore = create(
         }
 
         try {
+          const uid = account.uid?.trim()
           const accountData: CreateChannelAccountParams = {
             type: platform,
-            uid: account.uid,
+            ...(uid ? { uid } : {}),
             nickname: account.nickname,
             loginCookie: account.loginCookie,
           }

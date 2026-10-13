@@ -138,7 +138,7 @@ const PubParmasMentionInput = memo(
           return []
         try {
           const res = await getDouyinTopicsApi(queryString!)
-          return res?.data ?? []
+          return res?.code === 0 && Array.isArray(res.data) ? res.data : []
         }
         catch {
           return []
