@@ -20,6 +20,33 @@
 - web 改动在 `project/aitoearn-web` 验证，优先使用 `pnpm run type-check` 和 `pnpm build`。
 - 纯文档改动至少运行 `git diff --check`。
 
+## Git Workflow
+
+### Remotes and branches
+
+- `origin` 是用户的 GitHub Fork；`upstream` 是官方仓库。默认只向 `origin` 推送，不向 `upstream` 推送。
+- 本地 `main` 跟踪 `origin/main`。Fork 的 `main` 是集成分支，发布后必须同时包含最新 `upstream/main` 和已交付的二开代码。
+- `codex/custom-development` 跟踪 `origin/codex/custom-development`，作为日常二开分支。
+- 不使用强制推送覆盖远程历史。
+
+### 二开交付流程
+
+当二开任务进入发布阶段时，按以下顺序完成。用户要求分步操作时，按用户指定的步骤推进，不跳过后续检查；记录当前进度，后续继续时从未完成的步骤接着做。
+
+1. 检查工作区、差异和提交内容。只暂存本次确认要交付的文件；不要使用 `git add .`。本地密钥、环境配置、Docker 覆盖文件和生成产物默认不上传，除非用户明确要求。
+2. 在 `codex/custom-development` 提交二开改动。
+3. 获取 `origin` 与 `upstream` 的最新引用，并检查 `upstream/main` 相对 Fork `main` 的更新，以及远程开发分支上的新提交。
+4. 将 `origin/main` 和最新 `upstream/main` 合入本地 `main`；将 `origin/codex/custom-development` 的远程新提交合入本地开发分支；再将本地 `main` 合入 `codex/custom-development`，使开发分支建立在最新集成基线上。
+5. 完成项目规定的验证后，将开发分支推送到 `origin/codex/custom-development`。
+6. 将开发分支合入本地 `main`。推送前确认最新 `upstream/main` 和已交付开发分支的提交都包含在本地 `main` 中，并检查工作区没有未解决的冲突。
+7. 推送到 `origin/main`。推送后重新获取远程状态，确认 `origin/main` 同时包含最新 `upstream/main` 与开发分支提交；若上游在同步期间又前进，则继续同步和核验，直到确认完成。
+8. 完成后切回 `codex/custom-development`，并汇报同步、验证、提交和推送结果。
+
+### Merge conflicts
+
+- 任何合并出现冲突时，立即暂停集成；不自行选择 ours/theirs、不编辑冲突内容、不提交冲突结果，也不推送 `origin/main`。
+- 向用户列出冲突文件、相关分支及需要决定的内容，等待用户指示后再继续。不要擅自中止合并或重置工作区。
+
 ## Documentation Rules
 
 - 根 README 对外文档包含 `README.md`、`README_EN.md`、`README_JA.md`；涉及用户可见能力、安装、OpenClaw、MCP、Relay、API Key 或环境地址时默认三语同步。
