@@ -45,3 +45,7 @@ public/bin/*
 
 sh/*
 project/web/.cursor/
+
+# 本地 Docker 覆盖配置与浏览器自动化产物
+/docker-compose.override.yml
+/.playwright-mcp/
