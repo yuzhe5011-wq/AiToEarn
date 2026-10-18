@@ -4,6 +4,10 @@
 
 OSS 上传、媒体库、草稿素材、素材组与公开素材查询。
 
+草稿列表与详情返回 `useCount`（成功发布总次数）及 `useCountByAccountType`（按平台汇总的成功发布次数）。平台统计按草稿 ID 和所属用户匹配成功发布记录，与 `accountTypes` 适用平台分开。
+
+`useCount` 为发布完成事件累计的次数；`useCountByAccountType` 只汇总当前保留的成功发布记录。删除历史发布记录会减少对应平台的统计，不会回退累计总次数，因此二者可能不同。
+
 ## 文件清单
 
 - `material.api.ts`

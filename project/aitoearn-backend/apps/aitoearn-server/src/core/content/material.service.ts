@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { AssetsService, VideoMetadataService } from '@yikart/assets'
 import { AccountType, FileUtil, TableDto, UserType } from '@yikart/common'
-import { AssetType, Material, MaterialRepository, MaterialStatus, MaterialType, MediaType } from '@yikart/mongodb'
+import { AssetType, Material, MaterialRepository, MaterialStatus, MaterialType, MediaType, PublishRecordRepository } from '@yikart/mongodb'
 import { NewMaterial, UpMaterial } from './common'
 import { MediaService } from './media.service'
 
@@ -14,6 +14,7 @@ export class MaterialService {
     private readonly mediaService: MediaService,
     private readonly videoMetadataService: VideoMetadataService,
     private readonly assetsService: AssetsService,
+    private readonly publishRecordRepository: PublishRecordRepository,
   ) { }
 
   async create(newData: NewMaterial) {
@@ -122,9 +123,28 @@ export class MaterialService {
     return res
   }
 
-  async getInfo(id: string): Promise<Material | null> {
+  async getInfo(id: string) {
     const res = await this.materialRepository.getInfo(id)
-    return res
+    if (!res)
+      return null
+    const [material] = await this.withPublishCounts([res])
+    return material
+  }
+
+  private async withPublishCounts(materials: Material[]) {
+    const counts = await this.publishRecordRepository.countByMaterialsGroupedByAccountType(
+      materials.map(material => ({ materialId: material.id, userId: material.userId })),
+    )
+    const countsByMaterial = new Map<string, Partial<Record<AccountType, number>>>()
+    for (const row of counts) {
+      const platformCounts = countsByMaterial.get(row.materialId) ?? {}
+      platformCounts[row.accountType] = row.count
+      countsByMaterial.set(row.materialId, platformCounts)
+    }
+    return materials.map(material => ({
+      ...material,
+      useCountByAccountType: countsByMaterial.get(material.id) ?? {},
+    }))
   }
 
   async optimalInGroup(groupId: string, type?: MaterialType, accountType?: AccountType): Promise<Material | null> {
@@ -145,7 +165,7 @@ export class MaterialService {
     },
   ) {
     const res = await this.materialRepository.getList(filter, page)
-    return res
+    return { ...res, list: await this.withPublishCounts(res.list) }
   }
 
   async transferToGroup(

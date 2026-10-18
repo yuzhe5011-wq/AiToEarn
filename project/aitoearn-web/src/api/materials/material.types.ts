@@ -207,7 +207,9 @@ export interface PromotionMaterial {
   location?: [number, number]
   option?: Record<string, unknown>
   createdAt?: string
+  /** 关联草稿的成功发布总次数。 */
   useCount?: number
+  /** 按实际发布平台汇总，仅统计关联此草稿的成功发布记录。 */
   useCountByAccountType?: Partial<Record<PlatType, number>>
   maxUseCount?: number
   maxUseCountByAccountType?: Partial<Record<PlatType, number>>

@@ -200,9 +200,15 @@
     "untitled": "Unbenannt",
     "emptyDesc": "Publish records will appear here after content is posted."
   },
+  "draft": {
+    "caption": "Text und Themen",
+    "publication": "Veröffentlichungen"
+  },
   "material": {
-    "platformUseCount": "{{platform}} used {{count}} times",
-    "platformUseLimit": "{{platform}} used {{used}}/{{max}} times"
+    "targetPlatforms": "Zielplattformen",
+    "useCount": "{{count}} erfolgreiche Veröffentlichungen",
+    "platformUseCount": "{{platform}}: {{count}} erfolgreiche Veröffentlichungen",
+    "platformUseLimit": "{{platform}}: {{used}}/{{max}} erfolgreiche Veröffentlichungen"
   },
   "qrcode": {
     "title": "Promotion QR Code",

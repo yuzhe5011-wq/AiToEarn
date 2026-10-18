@@ -200,9 +200,15 @@
     "untitled": "제목 없음",
     "emptyDesc": "Publish records will appear here after content is posted."
   },
+  "draft": {
+    "caption": "본문 및 주제",
+    "publication": "게시 현황"
+  },
   "material": {
-    "platformUseCount": "{{platform}} used {{count}} times",
-    "platformUseLimit": "{{platform}} used {{used}}/{{max}} times"
+    "targetPlatforms": "대상 플랫폼",
+    "useCount": "게시 성공 {{count}}회",
+    "platformUseCount": "{{platform}}: 게시 성공 {{count}}회",
+    "platformUseLimit": "{{platform}}: 게시 성공 {{used}}/{{max}}회"
   },
   "qrcode": {
     "title": "Promotion QR Code",

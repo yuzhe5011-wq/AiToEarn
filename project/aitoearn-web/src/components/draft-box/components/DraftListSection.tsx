@@ -27,12 +27,12 @@ import { usePlanDetailStore } from '@/store/draft-box/planDetailStore'
 import { getPlatformInfoSync } from '@/store/platformMetadata'
 import { cn } from '@/utils/className'
 import { useContainerMasonryColumns } from '../hooks/useContainerMasonryColumns'
-import { getMaterialUseCountLabels } from '../utils/materialUseCount'
 import { AllListSection } from './AllListSection'
 import { BatchActionBar } from './BatchActionBar'
 import { ConditionalDeleteDialog } from './ConditionalDeleteDialog'
 import { useMediaTabStore } from './ContentTabs/mediaTabStore'
 import { DraftListToolbar } from './DraftListToolbar'
+import { DraftPublishStats } from './DraftPublishStats'
 import {
   GeneratingTaskCard,
   getDraftGenerationTaskTarget,
@@ -81,12 +81,11 @@ interface DraftCardProps {
   batchMode: boolean
   selected: boolean
   onToggleSelect: () => void
-  useCountLabels?: string[]
   enablePublishDrag?: boolean
 }
 
 // 草稿卡片组件（小红书风格）
-const DraftCard = memo(({ material, onClick, batchMode, selected, onToggleSelect, useCountLabels = [], enablePublishDrag }: DraftCardProps) => {
+const DraftCard = memo(({ material, onClick, batchMode, selected, onToggleSelect, enablePublishDrag }: DraftCardProps) => {
   const { t } = useTransClient('brandPromotion')
   const coverUrl = material.coverUrl || '/images/placeholder.png'
   const canPublishDrag = !!enablePublishDrag && !batchMode
@@ -167,16 +166,10 @@ const DraftCard = memo(({ material, onClick, batchMode, selected, onToggleSelect
             {material.model}
           </span>
         )}
-        {useCountLabels.map(label => (
-          <span
-            key={label}
-            className="inline-block mt-1 ml-1 px-1.5 py-0.5 text-xs rounded bg-primary/10 text-primary"
-          >
-            {label}
-          </span>
-        ))}
+        <DraftPublishStats material={material} className="mt-1.5" />
         {material.accountTypes && material.accountTypes.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1.5">
+          <div className="flex flex-wrap items-center gap-1 mt-1.5">
+            <span className="text-xs text-muted-foreground">{t('material.targetPlatforms')}</span>
             {material.accountTypes.map((type) => {
               const platInfo = getPlatformInfoSync(type as PlatType)
               if (!platInfo)
@@ -457,7 +450,6 @@ export const DraftListSection = memo(({
               batchMode={batchMode}
               selected={selectedSet.has(material.id)}
               onToggleSelect={() => toggleMaterialSelection(material.id)}
-              useCountLabels={getMaterialUseCountLabels(material, t)}
               enablePublishDrag={enablePublishDrag}
             />
           ))}

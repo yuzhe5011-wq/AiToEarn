@@ -113,6 +113,7 @@ AiToEarnの最も重要な目標：**すべてのクリエイターが稼げる�
 
 - **マルチプラットフォーム配信**：抖音、快手、B站、小紅書、視頻号（WeChat Channels）、微信公式アカウント（WeChat Official Accounts）、TikTok、YouTube、Facebook、Instagram、Threads、X（Twitter）、Pinterest、LinkedInに対応
 - **カレンダースケジュール**：カレンダーのように全プラットフォームのコンテンツ公開時間を統一的に計画
+- **草稿の公開統計**：草稿カードと詳細に公開成功の合計回数を表示し、その下にプラットフォームのアイコンと成功回数を表示。対象プラットフォームは別途明記
 
 <div style="display: flex; justify-content: space-around;">
   <img src="presentation/publish-cn.png" width="30%">

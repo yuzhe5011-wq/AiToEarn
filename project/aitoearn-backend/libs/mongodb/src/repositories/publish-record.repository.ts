@@ -54,6 +54,21 @@ export class PublishRecordRepository extends BaseRepository<PublishRecord> {
     return res
   }
 
+  async countByMaterialsGroupedByAccountType(materials: { materialId: string, userId: string }[]): Promise<{
+    materialId: string
+    accountType: AccountType
+    count: number
+  }[]> {
+    if (materials.length === 0)
+      return []
+
+    return this.publishRecordModel.aggregate([
+      { $match: { status: PublishStatus.Published, $or: materials } },
+      { $group: { _id: { materialId: '$materialId', accountType: '$accountType' }, count: { $sum: 1 } } },
+      { $project: { _id: 0, materialId: '$_id.materialId', accountType: '$_id.accountType', count: 1 } },
+    ])
+  }
+
   /**
    * 获取发布记录列表
    * @param query

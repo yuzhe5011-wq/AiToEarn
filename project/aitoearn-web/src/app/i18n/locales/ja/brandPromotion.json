@@ -200,9 +200,15 @@
     "untitled": "無題",
     "emptyDesc": "Publish records will appear here after content is posted."
   },
+  "draft": {
+    "caption": "本文とトピック",
+    "publication": "公開状況"
+  },
   "material": {
-    "platformUseCount": "{{platform}} used {{count}} times",
-    "platformUseLimit": "{{platform}} used {{used}}/{{max}} times"
+    "targetPlatforms": "対象プラットフォーム",
+    "useCount": "公開成功 {{count}} 回",
+    "platformUseCount": "{{platform}}：公開成功 {{count}} 回",
+    "platformUseLimit": "{{platform}}：公開成功 {{used}}/{{max}} 回"
   },
   "qrcode": {
     "title": "Promotion QR Code",

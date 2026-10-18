@@ -1,4 +1,4 @@
-﻿/**
+/**
  * DraftContentModule - 内容管理核心模块
  * 可复用的草稿管理区域，包含 AI生成栏、草稿列表、相关弹框
  */
@@ -233,6 +233,8 @@ function DraftContentModule({
           onClose={closePublishDialog}
           accounts={accountList}
           defaultAccountIds={defaultAccountIds}
+          materialIdForPublish={publishingDraft?.id}
+          materialGroupIdForPublish={publishingDraft?.groupId}
           onPubSuccess={closePublishDialog}
         />
       )}

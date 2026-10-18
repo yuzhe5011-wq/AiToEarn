@@ -273,17 +273,20 @@
     "untitled": "未命名"
   },
   "material": {
+    "targetPlatforms": "适用平台",
     "emptyTitle": "暂无草稿",
     "emptyDesc": "创建草稿或使用 Agent 批量生成",
-    "useCount": "已使用 {{count}} 次",
-    "platformUseCount": "{{platform}} 已使用 {{count}} 次",
-    "platformUseLimit": "{{platform}} 已使用 {{used}}/{{max}} 次",
+    "useCount": "已成功发布 {{count}} 次",
+    "platformUseCount": "{{platform}} 成功发布 {{count}} 次",
+    "platformUseLimit": "{{platform}} 成功发布 {{used}}/{{max}} 次",
     "draft": "草稿",
     "untitled": "未命名草稿",
     "generating": "生成中",
     "completed": "已生成"
   },
   "draft": {
+    "publication": "发布情况",
+    "caption": "正文与话题",
     "detailTitle": "草稿详情",
     "createdAt": "创建时间",
     "edit": "编辑",

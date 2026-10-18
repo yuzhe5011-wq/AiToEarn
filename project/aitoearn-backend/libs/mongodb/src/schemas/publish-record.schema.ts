@@ -240,6 +240,7 @@ export class PublishRecord extends WithTimestampSchema {
 export const PublishRecordSchema = SchemaFactory.createForClass(PublishRecord)
 
 PublishRecordSchema.index({ status: 1, publishTime: 1 })
+PublishRecordSchema.index({ userId: 1, materialId: 1, status: 1, accountType: 1 })
 PublishRecordSchema.index(
   { userId: 1, flowId: 1, accountId: 1, accountType: 1 },
   {

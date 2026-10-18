@@ -7,9 +7,7 @@
 'use client'
 
 import type { PromotionMaterial } from '@/api/materials/material.types'
-import type { PlatType } from '@/app/config/platConfig'
-import { ArrowRightLeft, Calendar, Edit, Image as ImageIcon, Loader2, Send, Trash2, Video } from 'lucide-react'
-import NextImage from 'next/image'
+import { ArrowRightLeft, Edit, Image as ImageIcon, Loader2, Send, Trash2 } from 'lucide-react'
 import { memo, useCallback, useState } from 'react'
 import { Navigation, Pagination } from 'swiper/modules'
 import { Swiper, SwiperSlide } from 'swiper/react'
@@ -26,24 +24,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { usePlanDetailStore } from '@/store/draft-box/planDetailStore'
 import { useTransferDraftDialogStore } from '@/store/draft-box/transferDraftDialogStore'
-import { getPlatformInfoSync } from '@/store/platformMetadata'
 import { cn } from '@/utils/className'
-import { formatDate } from '@/utils/format'
 import { getOssThumbnailUrl } from '@/utils/oss'
 import { toast } from '@/utils/ui/toast'
-import { getMaterialUseCountLabels } from '../utils/materialUseCount'
 import styles from './DraftDetailDialog.module.scss'
-import { GenerationParamsCard } from './GenerationParamsCard'
+import { DraftDetailInfo } from './DraftDetailDialog/components/DraftDetailInfo'
 import { LazyImage } from './LazyImage'
 import 'swiper/css'
 import 'swiper/css/navigation'
@@ -117,7 +110,7 @@ const MediaPreview = memo(({ material }: { material: PromotionMaterial }) => {
   return (
     <div
       className={cn(
-        'w-full h-full min-h-[300px] rounded-lg overflow-hidden bg-muted relative',
+        'w-full h-full min-h-0 rounded-lg overflow-hidden bg-muted relative',
         styles.draftMediaSwiper,
         isHovered ? styles.swiperVisible : styles.swiperHidden,
       )}
@@ -145,7 +138,7 @@ const MediaPreview = memo(({ material }: { material: PromotionMaterial }) => {
                     autoPlay
                     loop
                     playsInline
-                    className="w-full h-full object-contain bg-white"
+                    className="w-full h-full object-contain bg-muted"
                     poster={material.coverUrl ? getOssThumbnailUrl(material.coverUrl, { width: 960, quality: 75 }) : undefined}
                   />
                 )
@@ -163,7 +156,7 @@ const MediaPreview = memo(({ material }: { material: PromotionMaterial }) => {
       {isAllImages && mediaList.length > 1 && (
         <div className={cn(
           'absolute top-3 right-3 z-10 px-2.5 py-1 rounded-full text-xs font-medium',
-          'bg-black/50 text-white backdrop-blur-sm',
+          'bg-background/90 text-foreground border border-border backdrop-blur-sm',
           'transition-opacity duration-200',
           isHovered ? 'opacity-100' : 'opacity-0',
         )}
@@ -262,166 +255,49 @@ const DraftDetailContent = memo(({ allowTransfer = true }: DraftDetailContentPro
       {/* 无障碍：隐藏的标题 */}
       <DialogTitle className="sr-only">{t('draft.detailTitle')}</DialogTitle>
 
-      {/* PC端左右布局，移动端垂直布局 */}
-      <div className="flex flex-col md:flex-row md:gap-6 md:h-[80vh]">
-        {/* 左侧：媒体区域 */}
-        <div className="md:w-3/5 flex-shrink-0 h-[40vh] md:h-full">
+      <div className="flex max-h-[90dvh] flex-col md:h-[min(760px,88dvh)] md:flex-row">
+        <div className="h-[32dvh] shrink-0 border-b border-border bg-muted/40 p-3 md:h-full md:w-[52%] md:border-r md:border-b-0 md:p-5">
           <MediaPreview material={selectedDraft} />
         </div>
 
-        {/* 右侧：信息区域 - 移动端限制最大高度使 ScrollArea 生效 */}
-        <div className="md:w-2/5 mt-4 md:mt-0 flex flex-col max-h-[35vh] md:max-h-none md:h-full">
-          {/* 可滚动内容 */}
-          <ScrollArea className="flex-1 min-h-0">
-            <div className="space-y-4 pr-2">
-              {/* 标题 */}
-              <div>
-                <h3 className="text-lg font-medium">
-                  {selectedDraft.title || t('material.untitled')}
-                </h3>
-              </div>
-
-              {/* 描述 */}
-              {selectedDraft.desc && (
-                <div>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {selectedDraft.desc}
-                  </p>
-                </div>
-              )}
-
-              {/* 话题 */}
-              {selectedDraft.topics && selectedDraft.topics.length > 0 && (
-                <div className="flex flex-wrap gap-x-2 gap-y-1">
-                  {selectedDraft.topics.map((topic, index) => (
-                    <span key={index} className="text-sm text-primary">
-                      #
-                      {topic}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* AI 生成参数 */}
-              {selectedDraft.generationParams && (
-                <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
-                  <GenerationParamsCard
-                    params={selectedDraft.generationParams}
-                    t={t}
-                    showPlatforms={false}
-                    applyTargetGroupId={selectedDraft.groupId}
-                    onApplied={closeDraftDetailDialog}
-                  />
-                </div>
-              )}
-
-              {/* 统计信息 */}
-              <div className="flex flex-wrap items-center gap-2">
-                {getMaterialUseCountLabels(selectedDraft, t, { showZeroTotal: true }).map(label => (
-                  <Badge key={label} variant="secondary">
-                    {label}
-                  </Badge>
-                ))}
-                {selectedDraft.mediaList && selectedDraft.mediaList.length > 0 && (
-                  <Badge variant="outline">
-                    {selectedDraft.mediaList.some(m => m.type === 'video')
-                      ? (
-                          <>
-                            <Video className="h-3 w-3 mr-1" />
-                            {t('planType.video')}
-                          </>
-                        )
-                      : (
-                          <>
-                            <ImageIcon className="h-3 w-3 mr-1" />
-                            {t('planType.article')}
-                            {selectedDraft.mediaList.length > 1 && (
-                              <span className="ml-1">
-                                (
-                                {selectedDraft.mediaList.length}
-                                )
-                              </span>
-                            )}
-                          </>
-                        )}
-                  </Badge>
-                )}
-              </div>
-
-              {/* 平台图标 */}
-              {selectedDraft.accountTypes && selectedDraft.accountTypes.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2">
-                  {selectedDraft.accountTypes.map((type) => {
-                    const platInfo = getPlatformInfoSync(type as PlatType)
-                    if (!platInfo)
-                      return null
-                    return (
-                      <NextImage
-                        key={type}
-                        src={platInfo.icon}
-                        alt={platInfo.name}
-                        width={20}
-                        height={20}
-                        className="w-5 h-5"
-                        unoptimized
-                      />
-                    )
-                  })}
-                </div>
-              )}
-
-              {/* 创建时间 */}
-              {selectedDraft.createdAt && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  <span>
-                    {t('draft.createdAt')}
-                    :
-                    {' '}
-                    {formatDate(selectedDraft.createdAt)}
-                  </span>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <DraftDetailInfo material={selectedDraft} onApplied={closeDraftDetailDialog} />
 
           {/* 固定底部的操作按钮 */}
-          <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-4 flex-shrink-0">
+          <div className="flex shrink-0 items-center gap-2 border-t border-border bg-background px-4 py-3 md:px-6 md:py-4">
+            <Button
+              data-testid="draftbox-detail-delete-btn"
+              variant="ghost"
+              size="icon"
+              aria-label={t('draft.delete')}
+              title={t('draft.delete')}
+              className="mr-auto shrink-0 cursor-pointer text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => setDeleteConfirmOpen(true)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
             <Button
               data-testid="draftbox-detail-edit-btn"
               variant="outline"
-              className="min-w-[calc(50%-0.25rem)] flex-1 cursor-pointer md:min-w-0"
+              className="cursor-pointer px-3"
               onClick={handleEdit}
             >
-              <Edit className="h-4 w-4 mr-2" />
+              <Edit className="mr-1.5 h-4 w-4" />
               {t('draft.edit')}
             </Button>
             {allowTransfer && (
-              <Button
-                variant="outline"
-                className="min-w-[calc(50%-0.25rem)] flex-1 cursor-pointer md:min-w-0"
-                onClick={handleTransfer}
-              >
-                <ArrowRightLeft className="h-4 w-4 mr-2" />
+              <Button variant="outline" className="cursor-pointer px-3" onClick={handleTransfer}>
+                <ArrowRightLeft className="mr-1.5 h-4 w-4" />
                 {t('draftManage.transfer')}
               </Button>
             )}
             <Button
               data-testid="draftbox-detail-publish-btn"
-              className="min-w-[calc(50%-0.25rem)] flex-1 cursor-pointer md:min-w-0"
+              className="cursor-pointer bg-gradient-back px-4 text-gradient-foreground"
               onClick={handlePublish}
             >
-              <Send className="h-4 w-4 mr-2" />
+              <Send className="mr-1.5 h-4 w-4" />
               {t('draft.publish')}
-            </Button>
-            <Button
-              data-testid="draftbox-detail-delete-btn"
-              variant="outline"
-              className="min-w-[calc(50%-0.25rem)] flex-1 cursor-pointer text-destructive hover:text-destructive md:min-w-0"
-              onClick={() => setDeleteConfirmOpen(true)}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              {t('draft.delete')}
             </Button>
           </div>
         </div>
@@ -475,7 +351,7 @@ export const DraftDetailDialog = memo(({ allowTransfer = true }: DraftDetailDial
 
   return (
     <Dialog open onOpenChange={closeDraftDetailDialog}>
-      <DialogContent data-testid="draftbox-detail-dialog" className="sm:max-w-md md:max-w-6xl">
+      <DialogContent data-testid="draftbox-detail-dialog" className="w-[calc(100%-1.5rem)] gap-0 overflow-hidden p-0 sm:max-w-md md:max-w-6xl">
         <DraftDetailContent allowTransfer={allowTransfer} />
       </DialogContent>
     </Dialog>

@@ -273,17 +273,20 @@
     "untitled": "Untitled"
   },
   "material": {
+    "targetPlatforms": "Target platforms",
     "emptyTitle": "No Materials",
     "emptyDesc": "Create materials or use Agent to batch generate",
-    "useCount": "Used {{count}} times",
-    "platformUseCount": "{{platform}} used {{count}} times",
-    "platformUseLimit": "{{platform}} used {{used}}/{{max}} times",
+    "useCount": "Successfully published {{count}} times",
+    "platformUseCount": "{{platform}}: {{count}} successful publications",
+    "platformUseLimit": "{{platform}}: {{used}}/{{max}} successful publications",
     "draft": "Draft",
     "untitled": "Untitled Draft",
     "generating": "Generating",
     "completed": "Completed"
   },
   "draft": {
+    "publication": "Publishing",
+    "caption": "Caption & topics",
     "detailTitle": "Draft Details",
     "createdAt": "Created at",
     "edit": "Edit",
