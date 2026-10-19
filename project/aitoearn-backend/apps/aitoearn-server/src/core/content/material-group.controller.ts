@@ -17,10 +17,10 @@ import {
 import { ApiTags } from '@nestjs/swagger'
 import { GetToken, TokenInfo } from '@yikart/aitoearn-auth'
 import { ApiDoc, AppException, ParseObjectIdPipe, ResponseCode, TableDto } from '@yikart/common'
-import { CreateMaterialGroupDto, MaterialGroupFilterDto, MaterialGroupFilterSchema, UpdateMaterialGroupDto } from './material-group.dto'
+import { CreateMaterialGroupDto, MaterialGroupFilterDto, MaterialGroupFilterSchema, MaterialGroupOrderDto, UpdateMaterialGroupDto } from './material-group.dto'
 
 import { MaterialGroupService } from './material-group.service'
-import { MaterialGroupVo } from './material-group.vo'
+import { MaterialGroupOrderVo, MaterialGroupVo } from './material-group.vo'
 
 @ApiTags('Me/MaterialGroup')
 @Controller('material/group')
@@ -28,6 +28,12 @@ export class MaterialGroupController {
   constructor(
     private readonly materialGroupService: MaterialGroupService,
   ) { }
+
+  @ApiDoc({ summary: '调整草稿箱顺序', description: '按账号保存草稿箱顺序；未包含的草稿箱保留相对顺序。', body: MaterialGroupOrderDto.schema, response: MaterialGroupOrderVo })
+  @Post('order')
+  async reorderGroups(@GetToken() token: TokenInfo, @Body() body: MaterialGroupOrderDto) {
+    return MaterialGroupOrderVo.create(await this.materialGroupService.reorderGroups(token.id, body.ids))
+  }
 
   @ApiDoc({
     summary: '创建草稿分组',

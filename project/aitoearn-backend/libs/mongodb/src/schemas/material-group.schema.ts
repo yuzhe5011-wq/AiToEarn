@@ -55,6 +55,9 @@ export class MaterialGroup extends WithTimestampSchema {
     default: [],
   })
   platforms: AccountType[]
+
+  @Prop({ type: Number, default: 0 })
+  rank: number
 }
 
 export const MaterialGroupSchema = SchemaFactory.createForClass(MaterialGroup)

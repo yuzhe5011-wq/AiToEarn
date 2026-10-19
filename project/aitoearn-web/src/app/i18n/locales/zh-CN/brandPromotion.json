@@ -383,6 +383,8 @@
     "platformIssueHint": "如果您的草稿不需要适配 {{platform}} 平台，可以取消选择目标平台"
   },
   "planTab": {
+    "orderFailed": "排序保存失败，已恢复原顺序",
+    "reorderHint": "长按拖动调整顺序；也可按 Alt + 左右方向键移动",
     "more": "更多",
     "moreTitle": "所有草稿箱",
     "newPlan": "新建",

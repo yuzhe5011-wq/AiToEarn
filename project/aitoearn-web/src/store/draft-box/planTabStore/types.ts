@@ -9,6 +9,8 @@ export interface IPlanTabStoreState {
   /** Tab 栏显示的计划列表 */
   tabPlans: PromotionPlan[]
   tabPlansLoading: boolean
+  orderSaving: boolean
+  orderRevision: number
   /** 当前选中计划 ID（持久化） */
   selectedPlanId: string | null
   /** 「更多」面板的完整列表 */

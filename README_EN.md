@@ -111,6 +111,7 @@ Distribute content to 10+ major platforms worldwide with one click — no more m
 
 - **Multi-Platform Distribution**: Douyin, Kwai, Bilibili, Rednote, WeChat Channels, WeChat Official Accounts, TikTok, YouTube, Facebook, Instagram, Threads, X (Twitter), Pinterest, LinkedIn
 - **Calendar Scheduler**: Plan and coordinate content publishing across all platforms like a calendar
+- **Draft Box Ordering**: Hold and drag draft box tabs to reorder them; the order is saved to your account and retained across reloads and browsers
 - **Draft Publishing Counts**: Draft cards and details show total successful publications, with platform icons and counts underneath and target platforms labeled separately
 
 <img src="presentation/publish-cn.png" width="30%"> <img src="presentation/channel-cn.png" width="30%">

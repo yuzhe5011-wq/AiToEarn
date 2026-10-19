@@ -383,6 +383,8 @@
     "platformIssueHint": "If this draft does not need to support {{platform}}, you can deselect it from target platforms."
   },
   "planTab": {
+    "orderFailed": "Could not save the order. The previous order has been restored.",
+    "reorderHint": "Hold to drag and reorder; or use Alt + Left/Right arrow keys",
     "more": "More",
     "moreTitle": "All Draft Boxes",
     "newPlan": "New",

@@ -5,6 +5,8 @@
     "keywords": "brand promotion, AI promotion assets, draft box management, AI video generation, social media promotion, content publishing, marketing analytics, AI marketing tools, brand exposure, offline promotion, AiToEarn"
   },
   "planTab": {
+    "orderFailed": "順序を保存できませんでした。元の順序に戻しました。",
+    "reorderHint": "長押しして並べ替え、または Alt + 左右キーで移動",
     "more": "もっと見る",
     "moreTitle": "すべての下書きボックス",
     "newPlan": "新規",

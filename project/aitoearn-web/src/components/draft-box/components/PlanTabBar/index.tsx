@@ -8,6 +8,7 @@
 
 import { Ellipsis, Plus } from 'lucide-react'
 import { useEffect, useRef } from 'react'
+import { ReactSortable } from 'react-sortablejs'
 import { useShallow } from 'zustand/react/shallow'
 import { useTransClient } from '@/app/i18n/client'
 import { Button } from '@/components/ui/button'
@@ -16,6 +17,7 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { useBrandPromotionStore } from '@/store/draft-box/brandPromotionStore'
 import { usePlanTabStore } from '@/store/draft-box/planTabStore'
 import { cn } from '@/utils/className'
+import { usePlanTabSorting } from './hooks/usePlanTabSorting'
 import MorePanel from './MorePanel'
 import styles from './PlanTabBar.module.scss'
 
@@ -43,6 +45,7 @@ function PlanTabBar({ onPlanChange }: PlanTabBarProps) {
 
   const selectPlan = usePlanTabStore(state => state.selectPlan)
   const openCreatePlanModal = useBrandPromotionStore(state => state.openCreatePlanModal)
+  const sorting = usePlanTabSorting(tabPlans)
 
   // PC端鼠标滚轮水平滚动
   useEffect(() => {
@@ -72,6 +75,8 @@ function PlanTabBar({ onPlanChange }: PlanTabBarProps) {
   }, [selectedPlanId])
 
   const handleTabClick = (planId: string) => {
+    if (sorting.suppressClick())
+      return
     if (planId === selectedPlanId) {
       return
     }
@@ -102,23 +107,58 @@ function PlanTabBar({ onPlanChange }: PlanTabBarProps) {
           styles.scrollContainer,
         )}
       >
-        {tabPlans.map(plan => (
-          <button
-            key={plan.id}
-            ref={plan.id === selectedPlanId ? activeTabRef : undefined}
-            className={cn(
-              'shrink-0 px-4 py-2.5 text-sm cursor-pointer transition-colors whitespace-nowrap',
-              'hover:text-foreground',
-              'border-b-2 border-transparent',
-              plan.id === selectedPlanId
-                ? 'border-b-primary text-foreground font-medium'
-                : 'text-muted-foreground',
-            )}
-            onClick={() => handleTabClick(plan.id)}
-          >
-            {plan.name || plan.title}
-          </button>
-        ))}
+        <ReactSortable
+          list={sorting.plans}
+          setList={(plans, sortable) => {
+            // ReactSortable 构造时会回调；实例尚未挂载时不要更新父组件状态。
+            if (sortable)
+              sorting.setPlans(plans)
+          }}
+          className="flex min-w-max items-center"
+          direction="horizontal"
+          animation={180}
+          delay={350}
+          delayOnTouchOnly={false}
+          touchStartThreshold={8}
+          fallbackTolerance={5}
+          forceFallback
+          disabled={sorting.orderSaving || tabPlans.length < 2}
+          ghostClass={styles.sortGhost}
+          chosenClass={styles.sortChosen}
+          scrollSensitivity={40}
+          scrollSpeed={12}
+          onStart={sorting.startSort}
+          onEnd={event => sorting.endSort(event.oldIndex, event.newIndex)}
+        >
+          {sorting.plans.map(plan => (
+            <button
+              key={plan.id}
+              ref={plan.id === selectedPlanId ? activeTabRef : undefined}
+              data-id={plan.id}
+              aria-pressed={plan.id === selectedPlanId}
+              aria-busy={sorting.orderSaving}
+              title={t('planTab.reorderHint')}
+              className={cn(
+                'shrink-0 select-none touch-pan-x px-4 py-2.5 text-sm cursor-pointer transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                'hover:text-foreground',
+                'border-b-2 border-transparent',
+                plan.id === selectedPlanId
+                  ? 'border-b-primary text-foreground font-medium'
+                  : 'text-muted-foreground',
+              )}
+              onClick={() => handleTabClick(plan.id)}
+              onContextMenu={event => event.preventDefault()}
+              onKeyDown={(event) => {
+                if (event.altKey && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+                  event.preventDefault()
+                  sorting.moveByKeyboard(plan.id, event.key === 'ArrowLeft' ? -1 : 1)
+                }
+              }}
+            >
+              {plan.name || plan.title}
+            </button>
+          ))}
+        </ReactSortable>
       </div>
 
       {/* 右侧固定按钮区域 */}

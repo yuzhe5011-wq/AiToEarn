@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { TableDto } from '@yikart/common'
+import { AppException, ResponseCode, TableDto } from '@yikart/common'
 import { MaterialGroupRepository } from '@yikart/mongodb'
 import { NewMaterialGroup, UpdateMaterialGroup } from './common'
 
@@ -10,7 +10,19 @@ export class MaterialGroupService {
   ) { }
 
   async createGroup(newData: NewMaterialGroup) {
-    return this.materialGroupRepository.create(newData)
+    return this.materialGroupRepository.create({ ...newData, rank: Date.now() })
+  }
+
+  async reorderGroups(userId: string, ids: string[]) {
+    const groups = await this.materialGroupRepository.listByUserId(userId)
+    const ownedIds = new Set(groups.map(group => group.id))
+    if (ids.some(id => !ownedIds.has(id))) {
+      throw new AppException(ResponseCode.MaterialGroupNotFound)
+    }
+    const requestedIds = new Set(ids)
+    const orderedIds = [...ids, ...groups.filter(group => !requestedIds.has(group.id)).map(group => group.id)]
+    await this.materialGroupRepository.updateRanksByUserId(userId, orderedIds)
+    return { count: orderedIds.length }
   }
 
   async delGroup(id: string): Promise<boolean> {

@@ -3,6 +3,10 @@ import type { DraftGenerationRequest, ImageTextDraftType, VideoDraftType } from 
 import type { PlatType } from '@/app/config/platConfig'
 import type { PubType } from '@/app/config/publishConfig'
 
+export interface MaterialGroupOrderParams {
+  ids: string[]
+}
+
 // Source: types/assets.ts
 
 /**

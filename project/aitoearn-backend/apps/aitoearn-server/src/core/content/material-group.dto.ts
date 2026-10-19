@@ -29,6 +29,15 @@ export const UpdateMaterialGroupSchema = z.object({
 })
 export class UpdateMaterialGroupDto extends createZodDto(UpdateMaterialGroupSchema) {}
 
+export const MaterialGroupOrderSchema = z.object({
+  ids: z.array(z.string().regex(/^[a-f0-9]{24}$/).describe('草稿箱 ID'))
+    .min(1)
+    .max(1000)
+    .refine(ids => new Set(ids).size === ids.length, '草稿箱 ID 不可重复')
+    .describe('按期望顺序排列的草稿箱 ID，未包含的草稿箱保留相对顺序并排在后面'),
+})
+export class MaterialGroupOrderDto extends createZodDto(MaterialGroupOrderSchema) {}
+
 export const MaterialGroupFilterSchema = z.object({
   title: z.string().optional().describe('标题'),
 })

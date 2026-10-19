@@ -1,4 +1,4 @@
-import type { ConfirmUploadData, CreateMaterialGroupParams, CreateMaterialGroupVo, CreateMaterialParams, GetMaterialGroupBySceneParams, MaterialFilterDeleteParams, MaterialGroupBySceneData, MaterialGroupListFilters, MaterialGroupListVo, MaterialGroupSceneVo, MaterialListFilters, MaterialListQueryParams, MaterialListVo, MaterialOpenApiResponse, MediaListFilters, MediaListResponse, OptimalMaterialVo, PromotionMaterial, ThumbnailVo, TransferMaterialParams, TransferMediaParams, TransferMediaResult, UpdateMaterialGroupParams, UpdateMaterialParams, UploadSignData, UploadToOssOptions } from './material.types'
+import type { ConfirmUploadData, CreateMaterialGroupParams, CreateMaterialGroupVo, CreateMaterialParams, GetMaterialGroupBySceneParams, MaterialFilterDeleteParams, MaterialGroupBySceneData, MaterialGroupListFilters, MaterialGroupListVo, MaterialGroupOrderParams, MaterialGroupSceneVo, MaterialListFilters, MaterialListQueryParams, MaterialListVo, MaterialOpenApiResponse, MediaListFilters, MediaListResponse, OptimalMaterialVo, PromotionMaterial, ThumbnailVo, TransferMaterialParams, TransferMediaParams, TransferMediaResult, UpdateMaterialGroupParams, UpdateMaterialParams, UploadSignData, UploadToOssOptions } from './material.types'
 import type { PlatType } from '@/app/config/platConfig'
 import md5 from 'blueimp-md5'
 import { useUserStore } from '@/store/user'
@@ -390,4 +390,9 @@ export async function apiGetMaterialGroupByScene(
     ...res,
     data: Array.isArray(res.data) ? res.data[0] ?? null : res.data,
   }
+}
+
+/** 按当前账号保存草稿箱顺序。 */
+export function apiReorderMaterialGroups(data: MaterialGroupOrderParams) {
+  return http.post<{ count: number }>('material/group/order', data)
 }

@@ -96,6 +96,23 @@ export class MaterialGroupRepository extends BaseRepository<MaterialGroup> {
     return this.materialGroupModel.find({ _id: { $in: ids } }).lean({ virtuals: true })
   }
 
+  async listByUserId(userId: string): Promise<MaterialGroup[]> {
+    return this.materialGroupModel.find({ userId }).sort({ rank: -1, createdAt: -1, _id: -1 }).lean({ virtuals: true })
+  }
+
+  async updateRanksByUserId(userId: string, ids: string[]): Promise<void> {
+    if (ids.length === 0)
+      return
+    await this.materialGroupModel.db.transaction(async (session) => {
+      await this.materialGroupModel.bulkWrite(ids.map((id, index) => ({
+        updateOne: {
+          filter: { _id: id, userId },
+          update: { $set: { rank: ids.length - index } },
+        },
+      })), { session })
+    })
+  }
+
   // 获取列表
   async getList(inFilter: {
     userId?: string
@@ -118,7 +135,7 @@ export class MaterialGroupRepository extends BaseRepository<MaterialGroup> {
       this.materialGroupModel.countDocuments(filter),
       this.materialGroupModel
         .find(filter)
-        .sort({ createdAt: -1 })
+        .sort({ rank: -1, createdAt: -1, _id: -1 })
         .skip((pageNo! - 1) * pageSize)
         .limit(pageSize)
         .lean({ virtuals: true }),

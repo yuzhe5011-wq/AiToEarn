@@ -12,3 +12,8 @@ export const MaterialGroupVoSchema = z.object({
   updatedAt: z.coerce.date().describe('更新时间'),
 })
 export class MaterialGroupVo extends createZodDto(MaterialGroupVoSchema, 'MaterialGroupVo') {}
+
+export const MaterialGroupOrderVoSchema = z.object({
+  count: z.number().int().nonnegative().describe('保存顺序的草稿箱数量'),
+})
+export class MaterialGroupOrderVo extends createZodDto(MaterialGroupOrderVoSchema, 'MaterialGroupOrderVo') {}

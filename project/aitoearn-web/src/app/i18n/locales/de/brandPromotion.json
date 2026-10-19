@@ -5,6 +5,8 @@
     "keywords": "brand promotion, AI promotion assets, draft box management, AI video generation, social media promotion, content publishing, marketing analytics, AI marketing tools, brand exposure, offline promotion, AiToEarn"
   },
   "planTab": {
+    "orderFailed": "Reihenfolge konnte nicht gespeichert werden. Die vorherige Reihenfolge wurde wiederhergestellt.",
+    "reorderHint": "Zum Sortieren gedrückt halten, oder Alt + Pfeil links/rechts verwenden",
     "more": "Mehr",
     "moreTitle": "Alle Entwurfsboxen",
     "newPlan": "Neu",

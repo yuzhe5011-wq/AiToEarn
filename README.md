@@ -111,6 +111,7 @@ AiToEarn 最核心的目标：**帮助每一位创作者赚钱**。
 
 - **全网分发**：覆盖抖音、快手、B站、小红书、视频号、微信公众号、TikTok、YouTube、Facebook、Instagram、Threads、X（Twitter）、Pinterest、LinkedIn
 - **日历排期**：像排日程一样统一规划所有平台的内容发布时间
+- **草稿箱排序**：长按拖动草稿箱标签调整位置，顺序按账号保存，刷新或在其他浏览器打开后保持一致
 - **草稿发布统计**：草稿卡片和详情展示成功发布总次数，下方以平台图标和数字展示各平台成功次数，适用平台单独标注
 
 <img src="presentation/publish-cn.png" width="30%"> <img src="presentation/channel-cn.png" width="30%">

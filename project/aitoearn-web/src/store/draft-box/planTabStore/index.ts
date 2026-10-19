@@ -5,14 +5,17 @@
 
 import type { IPlanTabStoreState } from './types'
 import type { PromotionPlan } from '@/api/materials/material.types'
-import { apiGetMaterialGroupList } from '@/api/materials/material.api'
+import { apiGetMaterialGroupList, apiReorderMaterialGroups } from '@/api/materials/material.api'
 import { createPersistStore } from '@/utils/storage/createPersistStore'
+import { orderPlansByIds } from './utils/orderPlans'
 
 const PAGE_SIZE = 50
 
 const initialState: IPlanTabStoreState = {
   tabPlans: [],
   tabPlansLoading: false,
+  orderSaving: false,
+  orderRevision: 0,
   selectedPlanId: null,
   morePlans: [],
   morePlansLoading: false,
@@ -34,10 +37,14 @@ export const usePlanTabStore = createPersistStore(
     }
 
     const syncTabs = async (preferredPlanId?: string | null) => {
+      const requestedOrderRevision = get().orderRevision
       set({ tabPlansLoading: true })
       try {
         const res = await apiGetMaterialGroupList(1, PAGE_SIZE)
-        const list = res?.data?.list || []
+        const rawList = res?.data?.list || []
+        const list = requestedOrderRevision === get().orderRevision
+          ? rawList
+          : orderPlansByIds(rawList, get().tabPlans.map(plan => plan.id))
         const total = res?.data?.total || 0
 
         const { selectedPlanId } = get()
@@ -78,6 +85,38 @@ export const usePlanTabStore = createPersistStore(
     }
 
     const methods = {
+      reorderPlans: async (ids: string[]) => {
+        const { tabPlans, orderSaving } = get()
+        if (orderSaving || ids.length !== tabPlans.length || new Set(ids).size !== ids.length || ids.some(id => !tabPlans.some(plan => plan.id === id)))
+          return false
+        if (ids.every((id, index) => tabPlans[index].id === id))
+          return true
+        const previousIds = tabPlans.map(plan => plan.id)
+        set({
+          tabPlans: orderPlansByIds(tabPlans, ids),
+          morePlans: orderPlansByIds(get().morePlans, ids),
+          orderSaving: true,
+          orderRevision: get().orderRevision + 1,
+        })
+        try {
+          const res = await apiReorderMaterialGroups({ ids })
+          if (res?.code !== 0)
+            throw new Error('Failed to save draft-box order')
+          return true
+        }
+        catch {
+          set({
+            tabPlans: orderPlansByIds(get().tabPlans, previousIds),
+            morePlans: orderPlansByIds(get().morePlans, previousIds),
+            orderRevision: get().orderRevision + 1,
+          })
+          return false
+        }
+        finally {
+          set({ orderSaving: false })
+        }
+      },
+
       /**
        * 初始化 Tab 列表
        * 加载第一页草稿箱，恢复或默认选中
@@ -115,10 +154,14 @@ export const usePlanTabStore = createPersistStore(
        * 加载「更多」面板数据（指定页）
        */
       fetchMorePlans: async (page: number = 1) => {
+        const requestedOrderRevision = get().orderRevision
         set({ morePlansLoading: true })
         try {
           const res = await apiGetMaterialGroupList(page, PAGE_SIZE)
-          const list = res?.data?.list || []
+          const rawList = res?.data?.list || []
+          const list = requestedOrderRevision === get().orderRevision
+            ? rawList
+            : orderPlansByIds(rawList, get().tabPlans.map(plan => plan.id))
           const total = res?.data?.total || 0
 
           if (page === 1) {
