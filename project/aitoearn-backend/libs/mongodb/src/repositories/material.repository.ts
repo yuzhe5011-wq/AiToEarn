@@ -164,7 +164,8 @@ export class MaterialRepository extends BaseRepository<Material> {
       this.materialModel.countDocuments(filter),
       this.materialModel
         .find(filter)
-        .sort({ useCount: 1, createdAt: -1 })
+        // 列表按创建时间分页，与前端合并列表一致；发布计数变化不应改变草稿位置。
+        .sort({ createdAt: -1, _id: -1 })
         .skip((pageNo! - 1) * pageSize)
         .limit(pageSize)
         .lean({ virtuals: true }),
