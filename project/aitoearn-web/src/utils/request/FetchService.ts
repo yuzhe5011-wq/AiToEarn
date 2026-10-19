@@ -34,64 +34,62 @@ class FetchService<T = Response> {
   }
 
   public async request(requestParams: RequestParams): Promise<T> {
-    return new Promise(async (resolve, reject) => {
-      // 请求拦截
-      if (this.requestInterceptor) {
-        const newRequestParams = this.requestInterceptor(requestParams)
-        if (!newRequestParams)
-          return reject(null)
-        requestParams = newRequestParams
-      }
+    // 请求拦截
+    if (this.requestInterceptor) {
+      const newRequestParams = this.requestInterceptor(requestParams)
+      if (!newRequestParams)
+        return Promise.reject(null)
+      requestParams = newRequestParams
+    }
 
-      let baseURL = this.baseURL
-      if (requestParams.url.startsWith('assets/') && requestParams.url.endsWith('/uploadSign') && process.env.NEXT_PUBLIC_OSS_TEMP_URL) {
-        baseURL = process.env.NEXT_PUBLIC_OSS_TEMP_URL
-      }
+    let baseURL = this.baseURL
+    if (requestParams.url.startsWith('assets/') && requestParams.url.endsWith('/uploadSign') && process.env.NEXT_PUBLIC_OSS_TEMP_URL) {
+      baseURL = process.env.NEXT_PUBLIC_OSS_TEMP_URL
+    }
 
-      // body 参数处理
-      const fetchURL = requestParams.url.startsWith('http')
-        ? requestParams.url
-        : baseURL + requestParams.url
-      if (!requestParams.body && requestParams.data) {
-        // 检查是否为FormData
-        if (requestParams.data instanceof FormData) {
-          // 如果是FormData，直接设置为body，不需要转JSON
-          requestParams = {
-            ...requestParams,
-            body: requestParams.data,
-            // 不手动设置Content-Type，让浏览器自动处理
-          }
-        }
-        else {
-          // 非FormData对象走原来的逻辑
-          requestParams.data = this._filterDictUndefined(requestParams.data)
-          requestParams = {
-            ...requestParams,
-            body: requestParams.body ? requestParams.body : JSON.stringify(requestParams.data),
-            headers: {
-              ...(requestParams.headers || {}),
-              'content-type': new Headers(requestParams.headers).get('Content-Type') ?? 'application/json',
-            },
-          }
+    // body 参数处理
+    const fetchURL = requestParams.url.startsWith('http')
+      ? requestParams.url
+      : baseURL + requestParams.url
+    if (!requestParams.body && requestParams.data) {
+      // 检查是否为FormData
+      if (requestParams.data instanceof FormData) {
+        // 如果是FormData，直接设置为body，不需要转JSON
+        requestParams = {
+          ...requestParams,
+          body: requestParams.data,
+          // 不手动设置Content-Type，让浏览器自动处理
         }
       }
-
-      // params 参数处理
-      let params: string | null = null
-      if (requestParams.params) {
-        params = this._stringifySearchParams(requestParams.params)
+      else {
+        // 非FormData对象走原来的逻辑
+        requestParams.data = this._filterDictUndefined(requestParams.data)
+        requestParams = {
+          ...requestParams,
+          body: requestParams.body ? requestParams.body : JSON.stringify(requestParams.data),
+          headers: {
+            ...(requestParams.headers || {}),
+            'content-type': new Headers(requestParams.headers).get('Content-Type') ?? 'application/json',
+          },
+        }
       }
+    }
 
-      const res = await fetch(params ? `${fetchURL}?${params}` : fetchURL, {
-        ...requestParams,
-      })
+    // params 参数处理
+    let params: string | null = null
+    if (requestParams.params) {
+      params = this._stringifySearchParams(requestParams.params)
+    }
 
-      if (this.responseInterceptor) {
-        return resolve(this.responseInterceptor(res))
-      }
-
-      resolve(res as T)
+    const res = await fetch(params ? `${fetchURL}?${params}` : fetchURL, {
+      ...requestParams,
     })
+
+    if (this.responseInterceptor) {
+      return this.responseInterceptor(res)
+    }
+
+    return res as T
   }
 }
 

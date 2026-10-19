@@ -17,3 +17,7 @@
 - 新增 API 前先阅读 `src/api/README.md` 与目标模块 README。
 - 服务端组件、metadata、sitemap 的公开 GET 请求使用 `src/api/_server/server-fetch.ts`，不要复用客户端 `request`。
 - 修改请求基础设施后必须运行 `npx tsc --noEmit`。
+
+## 异常处理验证
+
+底层网络异常会向调用方抛出，避免请求永久等待。`FetchService.test.cjs` 覆盖网络失败、拦截取消和正常请求兼容性，运行 `pnpm exec node --test src/utils/request/FetchService.test.cjs`。

@@ -16,7 +16,7 @@
 | ---------- | --------------------------- | --------------------------------------------- |
 | `agent/`   | Agent 业务共享工具          | Agent 素材类型判断、筛选和素材转换            |
 | `region/`  | 区域与域名工具              | 国内/国际域名切换、区域限制确认跳转           |
-| `request/` | 客户端请求基础设施          | `request`、默认 `http`、请求参数类型          |
+| `request/` | 客户端请求基础设施          | `request`、默认 `http`、请求参数类型；`FetchService.test.cjs` 验证异常传播          |
 | `social/`  | 社交账号工具                | 社交账号粉丝统计、同步提示判断                |
 | `storage/` | 浏览器存储与 zustand 持久化 | localStorage、IndexedDB、`createPersistStore` |
 | `ui/`      | 命令式 UI 工具              | `confirm`、`toast`、`notification`            |
