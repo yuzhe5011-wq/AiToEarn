@@ -60,6 +60,12 @@ export interface IWxSphEventInfo {
   eventName: string
   eventCreatorNickname?: string
   eventAttendCount?: number
+  questFlag?: number
+  questInfo?: {
+    componentType: number
+    componentName: string
+    componentId: string
+  }
 }
 export type IXhsUserDeclarationOrigin = 1 | 2 | 3
 
@@ -313,6 +319,8 @@ export interface IPlatOption {
 
 // 发布参数
 export interface IPubParams {
+  sourceDraft?: { id: string, groupId: string }
+
   des: string
   // 视频和图片不能同时存在，存在图片本次发布则为图文，存在视频则本次发布为视频发布 --------------
   // 图片

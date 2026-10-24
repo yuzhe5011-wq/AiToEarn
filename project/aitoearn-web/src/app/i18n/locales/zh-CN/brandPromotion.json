@@ -273,6 +273,9 @@
     "untitled": "未命名"
   },
   "material": {
+    "scheduledPublication": "已定时",
+    "publicationChecking": "回查中",
+    "publicationCheckFailed": "回查失败",
     "targetPlatforms": "适用平台",
     "emptyTitle": "暂无草稿",
     "emptyDesc": "创建草稿或使用 Agent 批量生成",

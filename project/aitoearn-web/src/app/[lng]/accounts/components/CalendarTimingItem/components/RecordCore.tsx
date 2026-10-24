@@ -715,6 +715,13 @@ const RecordCore = memo(
               {days.format('YYYY-MM-DD HH:mm')}
               <Calendar className="h-3.5 w-3.5 md:h-4 md:w-4" />
             </div>
+            {activeRecord.createdAt && (
+              <div className="text-xs text-muted-foreground">
+                {t('record.submittedAt')}
+                {' · '}
+                {dayjs(activeRecord.createdAt).format('YYYY-MM-DD HH:mm')}
+              </div>
+            )}
             {/* 更新时间 */}
             {workMetricsFetchedAt && (
               <div className="text-xs text-muted-foreground flex items-center gap-1.5">

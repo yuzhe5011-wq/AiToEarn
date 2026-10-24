@@ -230,6 +230,12 @@ export interface WxSphEventInfo {
   eventName: string
   eventCreatorNickname?: string
   eventAttendCount?: number
+  questFlag?: number
+  questInfo?: {
+    componentType: number
+    componentName: string
+    componentId: string
+  }
 }
 
 export interface PluginVersionInfo {

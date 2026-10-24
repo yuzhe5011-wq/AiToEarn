@@ -357,6 +357,7 @@
   },
   "previewvideo": "预览视频",
   "record": {
+    "submittedAt": "提交时间",
     "metrics": {
       "views": "查看数",
       "comments": "评论数",

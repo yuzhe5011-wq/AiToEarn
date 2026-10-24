@@ -110,7 +110,7 @@ AiToEarn 最核心的目标：**帮助每一位创作者赚钱**。
 一键将内容分发到全球 10+ 主流平台，告别逐个平台手动发布。
 
 - **全网分发**：覆盖抖音、快手、B站、小红书、视频号、微信公众号、TikTok、YouTube、Facebook、Instagram、Threads、X（Twitter）、Pinterest、LinkedIn
-- **日历排期**：像排日程一样统一规划所有平台的内容发布时间
+- **日历排期**：像排日程一样统一规划所有平台的内容发布时间；视频号定时提交按计划时间显示为“平台已定时”，确认实际发布后更新状态和成功次数，草稿卡片与详情同步展示定时安排
 - **草稿箱排序**：长按拖动草稿箱标签调整位置，顺序按账号保存，刷新或在其他浏览器打开后保持一致
 - **草稿发布统计**：草稿卡片和详情展示成功发布总次数，下方以平台图标和数字展示各平台成功次数，适用平台单独标注
 
@@ -380,3 +380,8 @@ Electron 项目为 AiToEarn 提供桌面客户端。
 - [facefusion](https://github.com/facefusion/facefusion)
 - [NarratoAI](https://github.com/linyqh/NarratoAI)
 - [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo)
+
+本地视频号短标题与小游戏组件挂载修补工具及当前限制见 [插件修补说明](scripts/extension-patches/README.md)。
+必要发布诊断在插件本地按任务保存，最多 100 次、30 天，不记录登录凭据或媒体地址。
+
+本地 HTTP(S) 媒体地址（包括 localhost 和 IP）可用于保存发布记录；选择视频号活动时保留已有扩展链接。

@@ -207,6 +207,9 @@
     "publication": "Publications"
   },
   "material": {
+    "scheduledPublication": "Programmé",
+    "publicationChecking": "Vérification en cours",
+    "publicationCheckFailed": "Échec de la vérification",
     "targetPlatforms": "Plateformes cibles",
     "useCount": "{{count}} publications réussies",
     "platformUseCount": "{{platform}} : {{count}} publications réussies",

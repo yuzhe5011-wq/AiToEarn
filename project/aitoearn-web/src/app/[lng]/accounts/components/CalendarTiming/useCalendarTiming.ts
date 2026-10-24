@@ -14,6 +14,7 @@ const PUBLISH_RECORD_POLLING_INTERVAL = 20_000
 const pollingPublishStatuses = new Set<PublishStatus>([
   PublishStatus.QUEUED,
   PublishStatus.PUB_LOADING,
+  PublishStatus.PLATFORM_SCHEDULED,
 ])
 
 interface CalendarTimingQueryOptions {

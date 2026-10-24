@@ -268,6 +268,8 @@ export interface PublishPublishInput<TOption = Record<string, unknown>> {
 }
 
 export interface PublishProviderResult<TDataOption = Record<string, unknown>> {
+  /** 平台已接受的未来定时时间；提交完成不代表已经公开发布。 */
+  scheduledAt?: Date
   status: number
   platformWorkId?: string
   permalink?: string

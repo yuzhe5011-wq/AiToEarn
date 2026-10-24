@@ -110,7 +110,7 @@ Creators can sell content on the platform to complete brand promotion tasks. All
 Distribute content to 10+ major platforms worldwide with one click — no more manual posting on each platform.
 
 - **Multi-Platform Distribution**: Douyin, Kwai, Bilibili, Rednote, WeChat Channels, WeChat Official Accounts, TikTok, YouTube, Facebook, Instagram, Threads, X (Twitter), Pinterest, LinkedIn
-- **Calendar Scheduler**: Plan and coordinate content publishing across all platforms like a calendar
+- **Calendar Scheduler**: Plan and coordinate content publishing across all platforms like a calendar; scheduled WeChat Channels posts stay at their planned time until publication is confirmed, then update status and successful publication counts; draft cards and details also show scheduled posts
 - **Draft Box Ordering**: Hold and drag draft box tabs to reorder them; the order is saved to your account and retained across reloads and browsers
 - **Draft Publishing Counts**: Draft cards and details show total successful publications, with platform icons and counts underneath and target platforms labeled separately
 
@@ -373,3 +373,8 @@ If you run into usage difficulties, questions, or unexpected behavior, please op
 - [facefusion](https://github.com/facefusion/facefusion)
 - [NarratoAI](https://github.com/linyqh/NarratoAI)
 - [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo)
+
+See [local extension patch instructions and limitations](scripts/extension-patches/README.md) for WeChat Channels short-title mapping and mini-game component attachment.
+Minimal publishing diagnostics stay in extension-local storage, capped at 100 attempts and 30 days, excluding credentials and media URLs.
+
+Local HTTP(S) media URLs, including localhost and IP addresses, are accepted in publish records; changing a WeChat Channels activity preserves an existing extension link.

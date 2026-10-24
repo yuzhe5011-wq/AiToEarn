@@ -207,6 +207,9 @@
     "publication": "게시 현황"
   },
   "material": {
+    "scheduledPublication": "예약됨",
+    "publicationChecking": "게시 확인 중",
+    "publicationCheckFailed": "게시 확인 실패",
     "targetPlatforms": "대상 플랫폼",
     "useCount": "게시 성공 {{count}}회",
     "platformUseCount": "{{platform}}: 게시 성공 {{count}}회",

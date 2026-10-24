@@ -215,6 +215,8 @@ export interface PromotionMaterial {
   useCount?: number
   /** 按实际发布平台汇总，仅统计关联此草稿的成功发布记录。 */
   useCountByAccountType?: Partial<Record<PlatType, number>>
+  /** 尚未确认发布成功的定时安排。 */
+  scheduledPublications?: { id: string, accountType: PlatType, publishTime: string, linkStatus?: 'pending' | 'ready' | 'failed' }[]
   maxUseCount?: number
   maxUseCountByAccountType?: Partial<Record<PlatType, number>>
   topics?: string[]
@@ -310,6 +312,8 @@ export interface OptimalMaterialVo {
   mediaList?: MaterialMedia[]
   useCount: number
   useCountByAccountType?: Partial<Record<PlatType, number>>
+  /** 尚未确认发布成功的定时安排。 */
+  scheduledPublications?: { id: string, accountType: PlatType, publishTime: string }[]
   maxUseCount?: number
   maxUseCountByAccountType?: Partial<Record<PlatType, number>>
   option: any

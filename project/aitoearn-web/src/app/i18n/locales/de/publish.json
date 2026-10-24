@@ -349,6 +349,7 @@
   },
   "previewvideo": "Video-Vorschau",
   "record": {
+    "submittedAt": "Eingereicht am",
     "metrics": {
       "views": "Aufrufe",
       "comments": "Kommentare",

@@ -451,6 +451,7 @@ async function createPublishVideoFromDraft(material: PromotionMaterial, videoUrl
 export async function buildPublishParamsFromDraft(material: PromotionMaterial): Promise<Partial<IPubParams>> {
   const draftText = buildDraftPublishText(material.desc || '', material.topics)
   const params: Partial<IPubParams> = {
+    sourceDraft: { id: material.id, groupId: material.groupId },
     des: draftText.des,
     title: material.title || '',
     topics: draftText.topics,
@@ -481,6 +482,7 @@ export async function buildPublishParamsFromMedia(
 ): Promise<Partial<IPubParams>> {
   if (media.type === 'video') {
     return {
+      sourceDraft: undefined,
       video: await createPublishVideoFromMedia(media),
       images: [],
     }
@@ -488,6 +490,7 @@ export async function buildPublishParamsFromMedia(
 
   return {
     video: undefined,
+    sourceDraft: undefined,
     images: [...currentImages, await createPublishImageFromMedia(media)],
   }
 }

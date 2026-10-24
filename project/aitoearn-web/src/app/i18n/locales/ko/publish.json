@@ -349,6 +349,7 @@
   },
   "previewvideo": "동영상 미리보기",
   "record": {
+    "submittedAt": "제출 시간",
     "metrics": {
       "views": "조회수",
       "comments": "댓글",

@@ -132,9 +132,11 @@ export class MaterialService {
   }
 
   private async withPublishCounts(materials: Material[]) {
-    const counts = await this.publishRecordRepository.countByMaterialsGroupedByAccountType(
-      materials.map(material => ({ materialId: material.id, userId: material.userId })),
-    )
+    const owners = materials.map(material => ({ materialId: material.id, userId: material.userId }))
+    const [counts, scheduled] = await Promise.all([
+      this.publishRecordRepository.countByMaterialsGroupedByAccountType(owners),
+      this.publishRecordRepository.listScheduledByMaterials(owners),
+    ])
     const countsByMaterial = new Map<string, Partial<Record<AccountType, number>>>()
     for (const row of counts) {
       const platformCounts = countsByMaterial.get(row.materialId) ?? {}
@@ -144,6 +146,12 @@ export class MaterialService {
     return materials.map(material => ({
       ...material,
       useCountByAccountType: countsByMaterial.get(material.id) ?? {},
+      scheduledPublications: scheduled.filter(record => record.materialId === material.id).map(record => ({
+        id: record.id,
+        accountType: record.accountType,
+        publishTime: record.publishTime,
+        linkStatus: record.linkStatus,
+      })),
     }))
   }
 

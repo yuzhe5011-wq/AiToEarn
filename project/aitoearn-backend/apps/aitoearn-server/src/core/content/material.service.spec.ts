@@ -24,6 +24,7 @@ function createService() {
   }
   const publishRecordRepository = {
     countByMaterialsGroupedByAccountType: vi.fn().mockResolvedValue([]),
+    listScheduledByMaterials: vi.fn().mockResolvedValue([]),
   }
   return {
     service: new MaterialService(materialRepository as never, {} as never, {} as never, {} as never, publishRecordRepository as never),
@@ -70,6 +71,39 @@ describe('material successful publication counts', () => {
     expect(await service.getInfo('draft-1')).toMatchObject({
       useCount: 3,
       useCountByAccountType: { [AccountType.WeChatChannels]: 3 },
+    })
+  })
+
+  it('keeps scheduled arrangements separate from success counts and scoped to each draft', async () => {
+    const { service, materialRepository, publishRecordRepository } = createService()
+    materialRepository.getList.mockResolvedValue({ total: 2, list: [
+      { id: 'draft-1', userId: 'user-1', useCount: 0 },
+      { id: 'draft-2', userId: 'user-1', useCount: 0 },
+    ] })
+    const publishTime = new Date('2026-10-24T08:00:00Z')
+    publishRecordRepository.listScheduledByMaterials.mockResolvedValue([
+      { id: 'record-1', materialId: 'draft-1', accountType: AccountType.WeChatChannels, publishTime },
+    ])
+    const result = await service.getList({ pageNo: 1, pageSize: 20 }, { userId: 'user-1' })
+    expect(result.list[0]).toMatchObject({ useCount: 0, scheduledPublications: [
+      { id: 'record-1', accountType: AccountType.WeChatChannels, publishTime },
+    ] })
+    expect(result.list[1].scheduledPublications).toEqual([])
+    expect(publishRecordRepository.listScheduledByMaterials).toHaveBeenCalledWith([
+      { materialId: 'draft-1', userId: 'user-1' },
+      { materialId: 'draft-2', userId: 'user-1' },
+    ])
+  })
+
+  it('preserves exhausted polling status without changing successful publication counts', async () => {
+    const { service, materialRepository, publishRecordRepository } = createService()
+    materialRepository.getInfo.mockResolvedValue({ id: 'draft-1', userId: 'user-1', useCount: 0 })
+    publishRecordRepository.listScheduledByMaterials.mockResolvedValue([
+      { id: 'record-1', materialId: 'draft-1', accountType: AccountType.WeChatChannels, publishTime: new Date(), linkStatus: 'failed' },
+    ])
+    expect(await service.getInfo('draft-1')).toMatchObject({
+      useCount: 0,
+      scheduledPublications: [{ id: 'record-1', linkStatus: 'failed' }],
     })
   })
 

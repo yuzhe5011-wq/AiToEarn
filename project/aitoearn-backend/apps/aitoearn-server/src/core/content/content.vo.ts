@@ -1,4 +1,5 @@
 import { AccountType, createZodDto, FileUtil, UserType } from '@yikart/common'
+import { PublishRecordLinkStatus } from '@yikart/mongodb'
 import { z } from 'zod'
 
 const fileUrlSchema = () => FileUtil.zodBuildUrl().nullable().optional()
@@ -61,6 +62,12 @@ export const MaterialVoSchema = z.object({
   message: z.string().optional().describe('状态消息'),
   useCount: z.number().optional().describe('成功发布次数'),
   useCountByAccountType: z.record(z.string(), z.number()).optional().describe('按平台汇总的成功发布次数'),
+  scheduledPublications: z.array(z.object({
+    id: z.string().describe('发布记录 ID'),
+    accountType: z.enum(AccountType).describe('发布平台'),
+    publishTime: z.coerce.date().describe('定时发布时间'),
+    linkStatus: z.enum(PublishRecordLinkStatus).optional().describe('插件回查状态，failed 表示回查次数耗尽'),
+  })).optional().describe('尚未确认发布成功的定时安排'),
   maxUseCount: z.number().nullable().optional().describe('最大使用次数'),
   autoDeleteMedia: z.boolean().optional().describe('是否自动删除媒体'),
   model: z.string().optional().describe('模型'),

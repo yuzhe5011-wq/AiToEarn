@@ -3,12 +3,12 @@ import { z } from 'zod'
 import { createPublishMediaOptionsSchema } from '../../platforms/publish-media-adaptation.schema'
 
 export const PublishMediaInputSchema = z.object({
-  url: z.httpUrl().describe('媒体 URL'),
+  url: z.url({ protocol: /^https?$/ }).describe('媒体 URL'),
   options: createPublishMediaOptionsSchema(),
 })
 
 export const PublishCoverInputSchema = z.object({
-  url: z.httpUrl().describe('封面 URL'),
+  url: z.url({ protocol: /^https?$/ }).describe('封面 URL'),
   options: createPublishMediaOptionsSchema(),
 })
 

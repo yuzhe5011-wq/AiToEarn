@@ -37,6 +37,8 @@ vi.mock('../../relay/relay-client.service', () => ({
   RelayClientService: class RelayClientService {},
 }))
 
+vi.mock('../tasks/publish-state.service', () => ({ PublishStateService: class {} }))
+
 vi.mock('../../works/work.service', () => ({
   WorkService: class WorkService {},
 }))
@@ -45,12 +47,14 @@ function createService(input: {
   publishRecordRepo: Record<string, unknown>
   accountRepository?: Record<string, unknown>
   workService?: Record<string, unknown>
+  publishStateService?: Record<string, unknown>
   relayClientService?: Record<string, unknown>
 }) {
   return new PublishRecordReadService(
     input.publishRecordRepo as never,
     (input.accountRepository ?? {}) as never,
     (input.workService ?? {}) as never,
+    (input.publishStateService ?? {}) as never,
     input.relayClientService as never,
   )
 }
@@ -360,5 +364,32 @@ describe('publish record read service', () => {
         type: PublishType.VIDEO,
       }),
     })
+  })
+  it.each(['published', 'early-link', 'future-time', 'missing-time'])('only confirms platform schedules with actual publication evidence: %s', async (scenario) => {
+    const planned = new Date(Date.now() - 60_000)
+    const feedCreateTime = scenario === 'published'
+      ? Math.floor(Date.now() / 1000) - 30
+      : scenario === 'early-link'
+        ? Math.floor(planned.getTime() / 1000) - 30
+        : scenario === 'future-time' ? Math.floor(Date.now() / 1000) + 60 : undefined
+    const record = { id: 'record-1', status: PublishStatus.PlatformScheduled, accountType: AccountType.WeChatChannels, publishTime: planned }
+    const publishRecordRepo = {
+      getByIdAndUserId: vi.fn(async () => record),
+      updateById: vi.fn(async (_id, update) => ({ ...record, ...update.$set })),
+    }
+    const workService = { getLinkInfo: vi.fn(async () => ({ platform: AccountType.WeChatChannels, work: { id: 'feed_1', url: 'https://weixin.qq.com/sph/test' }, snapshots: [] })) }
+    const publishStateService = { markPublished: vi.fn(async () => true) }
+    const service = createService({ publishRecordRepo, workService, publishStateService })
+    await service.updateWorkLink('user-1', 'record-1', {
+      workLink: 'https://weixin.qq.com/sph/test',
+      linkStatus: PublishRecordLinkStatus.READY,
+      linkMeta: { feedCreateTime },
+    } as never)
+    if (scenario === 'published') {
+      expect(publishStateService.markPublished).toHaveBeenCalledWith('record-1', expect.objectContaining({ publishAt: new Date(feedCreateTime! * 1000), platformWorkId: 'feed_1' }))
+    }
+    else {
+      expect(publishStateService.markPublished).not.toHaveBeenCalled()
+    }
   })
 })

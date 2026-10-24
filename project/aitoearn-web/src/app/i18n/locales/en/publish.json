@@ -356,6 +356,7 @@
   },
   "previewvideo": "Preview Video",
   "record": {
+    "submittedAt": "Submitted at",
     "metrics": {
       "views": "Views",
       "comments": "Comments",

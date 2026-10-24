@@ -7,6 +7,7 @@ import { parseDouyinDataOption } from '../../platforms/douyin/douyin.interface'
 import { RelayAuthException } from '../../relay/relay-auth.exception'
 import { RelayClientService } from '../../relay/relay-client.service'
 import { WorkService } from '../../works/work.service'
+import { PublishStateService } from '../tasks/publish-state.service'
 
 interface WorkLinkInfoData {
   dataId?: string
@@ -26,6 +27,7 @@ export class PublishRecordReadService {
     private readonly publishRecordRepo: PublishRecordRepository,
     private readonly accountRepository: AccountRepository,
     private readonly workService: WorkService,
+    private readonly publishStateService: PublishStateService,
     @Optional() private readonly relayClientService?: RelayClientService,
   ) {}
 
@@ -164,6 +166,22 @@ export class PublishRecordReadService {
     const updated = await this.publishRecordRepo.updateById(id, update)
     if (!updated) {
       throw new AppException(ResponseCode.PublishRecordNotFound)
+    }
+    // 已解析的作品链接和平台实际发布时间共同确认发布，不能仅凭到点或链接就判定成功。
+    if (record.accountType === AccountType.WeChatChannels && record.status === PublishStatus.PlatformScheduled) {
+      const feedCreateTime = data.linkMeta?.['feedCreateTime']
+      const publishedAt = workResult.work?.publishedAt
+        ?? (typeof feedCreateTime === 'number' && Number.isFinite(feedCreateTime) ? new Date(feedCreateTime * 1000) : undefined)
+      if (publishedAt && publishedAt.getTime() >= record.publishTime.getTime() && publishedAt.getTime() <= Date.now()) {
+        await this.publishStateService.markPublished(id, {
+          platformWorkId: data.platformWorkId || workLinkInfo.dataId,
+          permalink: updated.workLink,
+          publishAt: publishedAt,
+          linkStatus,
+          linkMeta: data.linkMeta,
+        })
+        return this.getDetail(id, userId)
+      }
     }
     return updated
   }

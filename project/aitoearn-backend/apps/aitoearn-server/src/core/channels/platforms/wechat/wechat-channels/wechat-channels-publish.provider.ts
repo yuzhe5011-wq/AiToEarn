@@ -50,7 +50,9 @@ export class WeChatChannelsPublishProvider implements PublishProvider<WeChatChan
       throw new AppException(ResponseCode.ChannelPublishPlatformWorkIdMissing)
     }
 
+    const scheduledTime = option?.linkMeta?.scheduledTime
     return {
+      scheduledAt: scheduledTime && scheduledTime > Date.now() ? new Date(scheduledTime) : undefined,
       status: 200,
       platformWorkId,
       permalink: option?.workLink,

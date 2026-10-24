@@ -65,3 +65,7 @@
 | `PlatformMetadataVo`              | `interface` | PlatformMetadataVo 数据结构。              |
 | `StartChannelAccountAuthParams`   | `interface` | StartChannelAccountAuthParams 请求参数。   |
 | `StartChannelOAuthLoginParams`    | `interface` | StartChannelOAuthLoginParams 请求参数。    |
+
+## 视频号定时记录
+
+`createdAt` 保留记录提交时间，未来定时使用 `publishTime` 作为日历计划时间和 `PlatformScheduled` 状态；实际公开后使用平台回查时间更新 `publishTime`，原定时时间仍保存在 `linkMeta.scheduledTime`。只有确认公开后才触发成功次数，获取链接失败或仅到计划时间不会自动算成功。日历详情另列提交时间，平台已定时任务继续刷新状态。

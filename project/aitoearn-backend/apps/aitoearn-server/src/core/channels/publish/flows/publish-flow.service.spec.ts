@@ -19,6 +19,7 @@ vi.mock('@yikart/mongodb', () => ({
   PublishStatus: {
     WaitingForPublish: 0,
     Published: 1,
+    PlatformScheduled: 7,
   },
   PublishType: {
     VIDEO: 'video',
@@ -630,6 +631,41 @@ describe('publish flow service', () => {
       linkStatus: PublishRecordLinkStatus.PENDING,
       linkMeta: { mediaMd5sum: 'media_md5', videoClipTaskId: 'clip_1' },
     }))
+  })
+
+  it('keeps accepted plugin schedules at their planned time without publishing or queueing again', async () => {
+    const { service, publishRecordRepo, accountRepo, registry, publish, stateService, queueService } = createService()
+    const scheduledAt = new Date('2026-05-22T16:00:00Z')
+    accountRepo.getByIdAndUserId.mockResolvedValue({ id: 'account_wx', type: AccountType.WeChatChannels, uid: 'finder_id' })
+    registry.get.mockReturnValue({
+      metadata: {
+        authType: AuthType.Plugin,
+        contentLimits: { modes: [PublishContentMode.Video] },
+        mediaRules: {},
+        publishPolicy: { completionStrategy: CompletionStrategy.Sync, scheduleByPlatform: false, updateSupported: false },
+      },
+      publish,
+      runtime: {},
+    })
+    publish.publish.mockResolvedValueOnce({
+      status: 200,
+      platformWorkId: 'media_md5',
+      linkStatus: PublishRecordLinkStatus.PENDING,
+      scheduledAt,
+      linkMeta: { scheduledTime: scheduledAt.getTime() },
+    })
+    const result = await service.createFlow('user_1', {
+      flowId: 'flow_scheduled',
+      publishAt: new Date(),
+      content: { media: [{ url: 'https://cdn.example.test/video.mp4' }] },
+      items: [{ accountId: 'account_wx', platform: AccountType.WeChatChannels }],
+    })
+    expect(result.tasks[0]).toMatchObject({ status: PublishStatus.PlatformScheduled, publishTime: scheduledAt })
+    expect(publishRecordRepo.create).toHaveBeenCalledWith(expect.objectContaining({ status: PublishStatus.PlatformScheduled, publishTime: scheduledAt }))
+    expect(stateService.markCreatedPublished).not.toHaveBeenCalled()
+    expect(stateService.markQueued).not.toHaveBeenCalled()
+    expect(queueService.enqueueImmediate).not.toHaveBeenCalled()
+    expect(queueService.enqueueDelayed).not.toHaveBeenCalled()
   })
 
   it('includes link status fields in flow detail tasks', async () => {

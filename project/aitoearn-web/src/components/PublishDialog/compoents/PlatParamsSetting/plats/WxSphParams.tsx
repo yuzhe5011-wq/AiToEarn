@@ -43,13 +43,10 @@ interface WxSphLocationSearchItem {
 type WxSphOptionPatch = NonNullable<IPlatOption['wxSph']>
 
 function buildWxSphOption(option: IPlatOption, patch: Partial<WxSphOptionPatch>): IPlatOption {
-  const wxSphOption = { ...option.wxSph }
-  delete wxSphOption.extLink
-
   return {
     ...option,
     wxSph: {
-      ...wxSphOption,
+      ...option.wxSph,
       ...patch,
     },
   }
@@ -141,11 +138,6 @@ const WxSphParams = memo(
         setActivityResults([])
         setActivityError('')
       }, [updateWxSphOption])
-
-      useEffect(() => {
-        if (wxSphOption.extLink !== undefined)
-          updateWxSphOption({})
-      }, [updateWxSphOption, wxSphOption.extLink])
 
       useEffect(() => {
         const query = locationQuery.trim()

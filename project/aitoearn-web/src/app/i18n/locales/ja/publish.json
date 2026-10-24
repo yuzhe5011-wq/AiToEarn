@@ -348,6 +348,7 @@
   },
   "previewvideo": "動画をプレビュー",
   "record": {
+    "submittedAt": "送信日時",
     "metrics": {
       "views": "閲覧数",
       "comments": "コメント",

@@ -207,6 +207,9 @@
     "publication": "Veröffentlichungen"
   },
   "material": {
+    "scheduledPublication": "Geplant",
+    "publicationChecking": "Veröffentlichung wird geprüft",
+    "publicationCheckFailed": "Veröffentlichungsprüfung fehlgeschlagen",
     "targetPlatforms": "Zielplattformen",
     "useCount": "{{count}} erfolgreiche Veröffentlichungen",
     "platformUseCount": "{{platform}}: {{count}} erfolgreiche Veröffentlichungen",

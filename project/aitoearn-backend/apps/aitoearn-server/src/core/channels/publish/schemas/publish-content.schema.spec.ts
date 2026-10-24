@@ -1,7 +1,32 @@
 import { describe, expect, it } from 'vitest'
-import { PublishContentInputSchema } from './publish-content.schema'
+import { PublishContentInputSchema, PublishContentOverrideSchema } from './publish-content.schema'
 
 describe('publish content URL schema', () => {
+  it.each([
+    'http://localhost:8080/oss/video.mp4',
+    'http://127.0.0.1:8080/oss/video.mp4',
+    'http://[::1]:8080/oss/video.mp4',
+    'https://cdn.example.test/video.mp4?signature=fixture&expires=123',
+  ])('accepts HTTP(S) media and cover URLs for local and hosted deployments: %s', (url) => {
+    for (const schema of [PublishContentInputSchema, PublishContentOverrideSchema]) {
+      expect(schema.safeParse({ media: [{ url }], cover: { url } }).success).toBe(true)
+    }
+  })
+
+  it.each([
+    'file:///tmp/video.mp4',
+    'ftp://example.test/video.mp4',
+    'javascript:alert(1)',
+    'data:video/mp4;base64,AAAA',
+    '/oss/video.mp4',
+    'http://',
+  ])('rejects non-HTTP(S) or malformed media and cover URLs: %s', (url) => {
+    for (const schema of [PublishContentInputSchema, PublishContentOverrideSchema]) {
+      expect(schema.safeParse({ media: [{ url }] }).success).toBe(false)
+      expect(schema.safeParse({ cover: { url } }).success).toBe(false)
+    }
+  })
+
   it('requires http media and cover URLs', () => {
     expect(PublishContentInputSchema.safeParse({
       media: [{ url: 'https://cdn.example.test/video.mp4' }],

@@ -28,6 +28,7 @@ import { toast } from '@/utils/ui/toast'
 import { useContainerMasonryColumns } from '../../hooks/useContainerMasonryColumns'
 import { useDraftReferenceMaxImages } from '../../hooks/useDraftReferenceMaxImages'
 import { useMediaTabStore } from '../ContentTabs/mediaTabStore'
+import { DraftPublishStats } from '../DraftPublishStats'
 import { GeneratingTaskCard, shouldShowDraftGenerationTaskCard } from '../GeneratingCard'
 import { LazyImage } from '../LazyImage'
 import { LOAD_MORE_OBSERVER_OPTIONS } from '../loadMoreObserver'
@@ -145,6 +146,7 @@ const AllDraftCard = memo(({ material, onClick, batchMode, selected, onToggleSel
         <p className="text-sm font-medium text-foreground line-clamp-2">
           {material.title || ''}
         </p>
+        <DraftPublishStats material={material} className="mt-1.5" />
         {material.model && (
           <span className="inline-block mt-1 px-1.5 py-0.5 text-xs rounded bg-muted text-muted-foreground">
             {material.model}

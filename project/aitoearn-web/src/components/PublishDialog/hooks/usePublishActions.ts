@@ -28,6 +28,7 @@ import {
   getPublishRecordIdFromFlow,
   isPublishTitleSupported,
 } from '@/components/PublishDialog/PublishDialog.util'
+import { usePublishDialog } from '@/components/PublishDialog/usePublishDialog'
 import { usePublishDialogStorageStore } from '@/components/PublishDialog/usePublishDialogStorageStore'
 import { getPlatformInfoSync, isPlatformDisabledSync, isPlatformEnabledSync } from '@/store/platformMetadata'
 import { PlatformTaskStatus, PLUGIN_SUPPORTED_PLATFORMS, usePluginStore } from '@/store/plugin'
@@ -161,8 +162,8 @@ export function usePublishActions({
   pubTime,
   suppressAutoPublish,
   taskIdForPublish,
-  materialGroupIdForPublish,
-  materialIdForPublish,
+  materialGroupIdForPublish: suppliedMaterialGroupId,
+  materialIdForPublish: suppliedMaterialId,
   onPublishConfirmed,
   onPublishStart,
   onClose,
@@ -179,6 +180,9 @@ export function usePublishActions({
    * 3. API 发布后台执行，只更新自己的平台任务状态
    */
   const pubClick = useCallback(async () => {
+    const sourceDraft = usePublishDialog.getState().commonPubParams.sourceDraft
+    const materialIdForPublish = sourceDraft?.id ?? suppliedMaterialId
+    const materialGroupIdForPublish = sourceDraft?.groupId ?? suppliedMaterialGroupId
     const offlineItem = pubListChoosed.find(item => item.account.status === AccountStatus.DISABLE)
     if (offlineItem) {
       toast.error(t('tips.accountOffline'))
@@ -492,8 +496,8 @@ export function usePublishActions({
     pubTime,
     suppressAutoPublish,
     taskIdForPublish,
-    materialGroupIdForPublish,
-    materialIdForPublish,
+    suppliedMaterialGroupId,
+    suppliedMaterialId,
     onPublishConfirmed,
     onPublishStart,
     onClose,

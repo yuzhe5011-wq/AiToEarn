@@ -1,0 +1,11 @@
+{
+  "eventTopicId": "fixture-event-fruit",
+  "eventName": "消除个水果游戏推广",
+  "eventCreatorNickname": "fixture-creator",
+  "questFlag": 1,
+  "questInfo": {
+    "componentType": 2,
+    "componentName": "消除个水果游戏",
+    "componentId": "wx6d0ac8e74993b641"
+  }
+}

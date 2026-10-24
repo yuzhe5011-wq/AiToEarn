@@ -256,11 +256,13 @@ export class PublishFlowService {
         accountType: item.platform,
         uid: account?.uid,
         type,
-        status: completedResult ? PublishStatus.Published : PublishStatus.WaitingForPublish,
+        status: completedResult?.scheduledAt
+          ? PublishStatus.PlatformScheduled
+          : completedResult ? PublishStatus.Published : PublishStatus.WaitingForPublish,
         title: content.title,
         desc: content.body,
         topics: parseTopicsFromBody(content.body),
-        publishTime: completedAt ?? dto.publishAt,
+        publishTime: completedResult?.scheduledAt ?? completedAt ?? dto.publishAt,
         source: dto.context?.source,
         option,
         videoUrl: media.videoUrl,
@@ -325,7 +327,7 @@ export class PublishFlowService {
         accountId: record.accountId,
         accountType: record.platform,
       })
-      if (record.completedResult) {
+      if (record.completedResult && !record.completedResult.scheduledAt) {
         await this.stateService.markCreatedPublished(record.id, {
           platformWorkId: record.completedResult.platformWorkId,
           permalink: record.completedResult.permalink,
@@ -335,7 +337,7 @@ export class PublishFlowService {
           workStatus: record.completedResult.workStatus,
         })
       }
-      else {
+      else if (!record.completedResult) {
         queueRecords.push({ id: record.id, platform: record.platform })
       }
     }

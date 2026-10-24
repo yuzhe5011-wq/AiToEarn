@@ -54,6 +54,16 @@ export class PublishRecordRepository extends BaseRepository<PublishRecord> {
     return res
   }
 
+  async listScheduledByMaterials(materials: { materialId: string, userId: string }[]) {
+    if (materials.length === 0)
+      return []
+
+    return this.publishRecordModel.find({
+      $or: materials,
+      status: { $in: [PublishStatus.WaitingForPublish, PublishStatus.PlatformScheduled] },
+    }).select({ materialId: 1, accountType: 1, publishTime: 1, linkStatus: 1 }).sort({ publishTime: 1 }).lean({ virtuals: true }).exec()
+  }
+
   async countByMaterialsGroupedByAccountType(materials: { materialId: string, userId: string }[]): Promise<{
     materialId: string
     accountType: AccountType

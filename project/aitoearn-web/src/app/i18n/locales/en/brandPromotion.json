@@ -273,6 +273,9 @@
     "untitled": "Untitled"
   },
   "material": {
+    "scheduledPublication": "Scheduled",
+    "publicationChecking": "Checking publication",
+    "publicationCheckFailed": "Publication check failed",
     "targetPlatforms": "Target platforms",
     "emptyTitle": "No Materials",
     "emptyDesc": "Create materials or use Agent to batch generate",

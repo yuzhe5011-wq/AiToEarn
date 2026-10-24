@@ -207,6 +207,9 @@
     "publication": "公開状況"
   },
   "material": {
+    "scheduledPublication": "予約済み",
+    "publicationChecking": "公開状況を確認中",
+    "publicationCheckFailed": "公開状況の確認に失敗",
     "targetPlatforms": "対象プラットフォーム",
     "useCount": "公開成功 {{count}} 回",
     "platformUseCount": "{{platform}}：公開成功 {{count}} 回",
