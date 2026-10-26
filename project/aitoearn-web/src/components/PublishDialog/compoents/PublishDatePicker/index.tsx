@@ -17,7 +17,10 @@ import { usePublishDialog } from '@/components/PublishDialog/usePublishDialog'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/utils/className'
+import { toast } from '@/utils/ui/toast'
 import { DateTimePicker } from './DateTimePicker'
+
+const QUICK_PUBLISH_TIMES = ['07:45', '11:50', '12:15', '18:00', '19:30', '21:00']
 
 export interface IPublishDatePickerRef {}
 
@@ -46,12 +49,13 @@ const PublishDatePicker = memo(
         inline = false,
         showNowButton = true,
         submitText,
-        minLeadMinutes = 20,
+        minLeadMinutes = 10,
       }: IPublishDatePickerProps,
       ref: ForwardedRef<IPublishDatePickerRef>,
     ) => {
       const { t } = useTransClient('publish')
       const [menuOpen, setMenuOpen] = useState(false)
+      const [now, setNow] = useState(() => dayjs())
       const [tempDate, setTempDate] = useState<Dayjs | null>(null)
       const { pubTime, setPubTime } = usePublishDialog(
         useShallow(state => ({
@@ -66,6 +70,16 @@ const PublishDatePicker = memo(
         setTempDate(date)
       }
 
+      const minTime = now.startOf('minute').add(minLeadMinutes, 'minute')
+      const canConfirm = !!tempDate && !tempDate.startOf('minute').isBefore(minTime)
+
+      useEffect(() => {
+        if (!menuOpen && !inline)
+          return
+        const timer = setInterval(() => setNow(dayjs()), 1000)
+        return () => clearInterval(timer)
+      }, [menuOpen, inline])
+
       // 点击 Now 按钮 - 选择立即发布模式
       const handleNowClick = (e: React.MouseEvent) => {
         e.stopPropagation()
@@ -76,7 +90,9 @@ const PublishDatePicker = memo(
       // 点击 Confirm 按钮 - 确认定时发布时间
       const handleScheduleConfirm = async (e: React.MouseEvent) => {
         e.stopPropagation()
-        const nextPubTime = tempDate ? tempDate.format() : undefined
+        if (!tempDate || tempDate.startOf('minute').isBefore(dayjs().startOf('minute').add(minLeadMinutes, 'minute')))
+          return
+        const nextPubTime = tempDate.second(0).millisecond(0).format()
         updatePubTime(nextPubTime)
         setMenuOpen(false)
         if (inline) {
@@ -89,53 +105,16 @@ const PublishDatePicker = memo(
         return current && current < dayjs().startOf('day')
       }
 
-      // 禁用当前时间之前和当前时间20分钟内的时间（只精确到分钟，不考虑秒）
+      // 与快捷时间保持相同的分钟级提前量，跨午夜时也禁用不可用时间。
       const disabledDateTime = (current: dayjs.Dayjs | null) => {
         if (!current)
           return {}
-
-        const now = dayjs()
-        const minTime = now.add(minLeadMinutes, 'minute')
-
-        // 只对今天限制
-        if (current.isSame(now, 'day')) {
-          const minHour = minTime.hour()
-          const minMinute = minTime.minute()
-
-          // 禁用小时
-          const disabledHours = () => {
-            const hours: number[] = []
-            for (let i = 0; i < 24; i++) {
-              if (i < minHour)
-                hours.push(i)
-            }
-            return hours
-          }
-
-          // 禁用分钟
-          const disabledMinutes = (selectedHour: number) => {
-            const minutes: number[] = []
-            if (selectedHour === minHour) {
-              for (let i = 0; i < minMinute; i++) {
-                minutes.push(i)
-              }
-            }
-            else if (selectedHour < minHour) {
-              // 小时都禁用了，分钟全部禁用
-              for (let i = 0; i < 60; i++) {
-                minutes.push(i)
-              }
-            }
-            return minutes
-          }
-
-          return {
-            disabledHours,
-            disabledMinutes,
-          }
+        return {
+          disabledHours: () => Array.from({ length: 24 }, (_, hour) => hour)
+            .filter(hour => current.hour(hour).minute(59).startOf('minute').isBefore(minTime)),
+          disabledMinutes: (hour: number) => Array.from({ length: 60 }, (_, minute) => minute)
+            .filter(minute => current.hour(hour).minute(minute).startOf('minute').isBefore(minTime)),
         }
-        // 非今天不限制
-        return {}
       }
 
       const pubTimeValue = useMemo(() => {
@@ -147,15 +126,16 @@ const PublishDatePicker = memo(
 
       useEffect(() => {
         if (inline) {
-          setTempDate(pubTimeValue || dayjs().add(30, 'minute'))
+          setTempDate(pubTimeValue || dayjs().add(minLeadMinutes, 'minute').startOf('minute'))
         }
-      }, [inline, pubTimeValue])
+      }, [inline, pubTimeValue, minLeadMinutes])
 
       // 当打开弹窗时，初始化临时日期
       const handleOpenChange = (open: boolean) => {
         if (open) {
-          // 如果已有定时时间，使用它；否则使用当前时间+30分钟作为默认
-          setTempDate(pubTimeValue || dayjs().add(30, 'minute'))
+          setNow(dayjs())
+          // 保留已有定时；无定时时按最小提前量初始化。
+          setTempDate(pubTimeValue || dayjs().add(minLeadMinutes, 'minute').startOf('minute'))
         }
         setMenuOpen(open)
       }
@@ -171,6 +151,30 @@ const PublishDatePicker = memo(
             isMobile={isMobile}
           />
 
+          <div className="space-y-2 border-t border-border px-4 py-3">
+            <p className="text-xs text-muted-foreground">{t('schedule.quickTimes')}</p>
+            <div className="grid grid-cols-3 gap-2">
+              {QUICK_PUBLISH_TIMES.map((time) => {
+                const [hour, minute] = time.split(':').map(Number)
+                const candidate = (tempDate || now).hour(hour).minute(minute).second(0).millisecond(0)
+                const disabled = candidate.isBefore(minTime)
+                return (
+                  <Button
+                    key={time}
+                    variant={tempDate?.isSame(candidate, 'minute') ? 'secondary' : 'outline'}
+                    size="sm"
+                    className="tabular-nums"
+                    disabled={disabled || loading}
+                    onClick={() => setTempDate(candidate)}
+                    data-testid={`publish-quick-time-${time.replace(':', '')}`}
+                  >
+                    {time}
+                  </Button>
+                )
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground">{t('schedule.minimumLead', { minutes: minLeadMinutes })}</p>
+          </div>
           <div className="flex items-center justify-between py-2.5 px-4 border-t border-border">
             {showNowButton ? (
               <Button
@@ -190,7 +194,7 @@ const PublishDatePicker = memo(
               size="sm"
               onClick={handleScheduleConfirm}
               className="gap-2 cursor-pointer"
-              disabled={loading || !tempDate}
+              disabled={loading || !canConfirm}
               data-testid="publish-schedule-confirm-button"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
@@ -241,7 +245,14 @@ const PublishDatePicker = memo(
           <Button
             className={cn('rounded-l-none h-10 px-6 cursor-pointer', isMobile && 'shrink-0')}
             disabled={loading}
-            onClick={() => onClick(currentPubTime)}
+            onClick={() => {
+              if (currentPubTime && dayjs(currentPubTime).startOf('minute').isBefore(dayjs().startOf('minute').add(minLeadMinutes, 'minute'))) {
+                toast.warning(t('schedule.minimumLead', { minutes: minLeadMinutes }))
+                handleOpenChange(true)
+                return
+              }
+              void onClick(currentPubTime)
+            }}
             data-testid="publish-submit-btn"
           >
             {loading && <Loader2 className="-ml-1 mr-2 h-4 w-4 animate-spin" />}

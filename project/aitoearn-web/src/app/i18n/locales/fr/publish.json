@@ -1,4 +1,8 @@
 {
+  "schedule": {
+    "quickTimes": "Horaires rapides",
+    "minimumLead": "Programmer à la date choisie, au moins {{minutes}} minutes à l’avance"
+  },
   "title": "Publier une œuvre",
   "allChannels": "Tous les canaux",
   "publish": "Publier",

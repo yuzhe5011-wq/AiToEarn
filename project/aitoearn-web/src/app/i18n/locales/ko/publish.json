@@ -1,4 +1,8 @@
 {
+  "schedule": {
+    "quickTimes": "빠른 시간 선택",
+    "minimumLead": "선택한 날짜에서 최소 {{minutes}}분 이후로 예약"
+  },
   "title": "작품 게시",
   "allChannels": "모든 채널",
   "publish": "게시",

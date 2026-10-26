@@ -1,4 +1,8 @@
 {
+  "schedule": {
+    "quickTimes": "Quick times",
+    "minimumLead": "Schedule on the selected date, at least {{minutes}} minutes ahead"
+  },
   "title": "Publish Work",
   "allChannels": "All Channels",
   "publish": "Publish",

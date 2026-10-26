@@ -1,4 +1,8 @@
 {
+  "schedule": {
+    "quickTimes": "快捷时间",
+    "minimumLead": "至少提前 {{minutes}} 分钟，按所选日期安排"
+  },
   "title": "发布作品",
   "allChannels": "全部频道",
   "publish": "发布",

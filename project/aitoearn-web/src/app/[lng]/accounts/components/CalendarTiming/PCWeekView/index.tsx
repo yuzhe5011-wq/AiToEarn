@@ -42,8 +42,8 @@ import 'dayjs/locale/fr'
 import 'dayjs/locale/ja'
 import 'dayjs/locale/ko'
 
-// 时间槽：每 2 小时（12 AM, 2 AM, 4 AM, ..., 10 PM）
-const TIME_SLOTS = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]
+// 凌晨 00:00—05:59 合并，06:00 起每两小时一格。
+const TIME_SLOTS = [0, 6, 8, 10, 12, 14, 16, 18, 20, 22]
 const HOURS_PER_TIME_SLOT = 2
 const VISIBLE_HOURS_PER_SCREEN = 12
 const VISIBLE_TIME_SLOT_COUNT = VISIBLE_HOURS_PER_SCREEN / HOURS_PER_TIME_SLOT
@@ -61,7 +61,7 @@ function formatHour(hour: number): string {
  */
 function getTimeSlot(publishTime: string | Date): number {
   const hour = dayjs(publishTime).hour()
-  return Math.floor(hour / 2) * 2
+  return hour < 6 ? 0 : Math.floor(hour / 2) * 2
 }
 
 function getFestivalStatusTone(festival: CalendarFestivalInfo) {
@@ -240,7 +240,7 @@ const PCWeekView = memo<IPCWeekViewProps>(({ currentDate, recordMap, loading, on
 
   // 计算当前时间的时间槽索引（用于自动滚动）
   const currentTimeSlotIndex = useMemo(() => {
-    return Math.floor(currentHour / 2)
+    return TIME_SLOTS.indexOf(currentHour < 6 ? 0 : Math.floor(currentHour / 2) * 2)
   }, [currentHour])
 
   useEffect(() => {
@@ -401,7 +401,7 @@ const PCWeekView = memo<IPCWeekViewProps>(({ currentDate, recordMap, loading, on
           </div>
 
           {/* 时间行 */}
-          {TIME_SLOTS.map((hour) => {
+          {TIME_SLOTS.map((hour, index) => {
             return (
               <div key={hour} className="flex" style={{ minHeight: timeCellHeight }}>
                 {/* 时间标签 */}
@@ -414,7 +414,7 @@ const PCWeekView = memo<IPCWeekViewProps>(({ currentDate, recordMap, loading, on
                   const isToday = dateStr === todayStr
                   const isPastDay = date.isBefore(today, 'day')
                   // 今天的过去小时也算过去
-                  const isPastHour = isToday && hour + 2 <= currentHour
+                  const isPastHour = isToday && (TIME_SLOTS[index + 1] ?? 24) <= currentHour
                   const isPast = isPastDay || isPastHour
                   const key = `${dateStr}-${hour}`
                   const records = groupedRecords.get(key) || []

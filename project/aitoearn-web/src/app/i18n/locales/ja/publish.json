@@ -1,4 +1,8 @@
 {
+  "schedule": {
+    "quickTimes": "時刻のクイック選択",
+    "minimumLead": "選択した日付で、{{minutes}}分以上先の時刻を指定"
+  },
   "title": "作品を公開",
   "allChannels": "すべてのチャンネル",
   "publish": "公開",

@@ -1,4 +1,8 @@
 {
+  "schedule": {
+    "quickTimes": "Schnellzeiten",
+    "minimumLead": "Am gewählten Datum mindestens {{minutes}} Minuten im Voraus planen"
+  },
   "title": "Werk veröffentlichen",
   "allChannels": "Alle Kanäle",
   "publish": "Veröffentlichen",
