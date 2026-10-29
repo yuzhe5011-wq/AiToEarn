@@ -1,4 +1,5 @@
 {
+  "recordRecoveryPending": "プラットフォームは受付済みです。記録の保存は自動再試行されます。再投稿しないでください。",
   "status": {
     "unknown": "不明",
     "checking": "確認中...",

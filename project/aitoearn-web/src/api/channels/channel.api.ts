@@ -73,16 +73,16 @@ function encodePathSegment(value: string) {
  * 创建发布 Flow
  * 创建多平台发布 flow，一次请求可生成多个单平台任务
  */
-export function createChannelPublishFlowApi(data: ChannelCreatePublishFlowParams) {
-  return http.post<ChannelPublishFlowVo>('v2/channels/publish/flows', data)
+export function createChannelPublishFlowApi(data: ChannelCreatePublishFlowParams, silent = false) {
+  return http.post<ChannelPublishFlowVo>('v2/channels/publish/flows', data, silent)
 }
 
 /**
  * 获取 Flow 详情
  * 根据 flowId 获取发布 flow 聚合信息
  */
-export function getChannelPublishFlowApi(flowId: string) {
-  return http.get<ChannelPublishFlowVo>(`v2/channels/publish/flows/${flowId}`)
+export function getChannelPublishFlowApi(flowId: string, silent = false) {
+  return http.get<ChannelPublishFlowVo>(`v2/channels/publish/flows/${flowId}`, undefined, silent)
 }
 
 /**

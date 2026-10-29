@@ -1,4 +1,5 @@
 {
+  "recordRecoveryPending": "平台已接受，本地发布记录保存中，请勿重复发布；页面恢复后将自动补存。",
   "status": {
     "unknown": "未检测",
     "checking": "检测中...",

@@ -1,4 +1,5 @@
 {
+  "recordRecoveryPending": "The platform accepted the post. Saving its record will retry automatically; do not publish again.",
   "status": {
     "unknown": "Unknown",
     "checking": "Checking...",

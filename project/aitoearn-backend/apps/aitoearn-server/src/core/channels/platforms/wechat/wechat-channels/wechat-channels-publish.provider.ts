@@ -52,7 +52,7 @@ export class WeChatChannelsPublishProvider implements PublishProvider<WeChatChan
 
     const scheduledTime = option?.linkMeta?.scheduledTime
     return {
-      scheduledAt: scheduledTime && scheduledTime > Date.now() ? new Date(scheduledTime) : undefined,
+      scheduledAt: scheduledTime && option?.linkStatus === PublishRecordLinkStatus.PENDING ? new Date(scheduledTime) : undefined,
       status: 200,
       platformWorkId,
       permalink: option?.workLink,

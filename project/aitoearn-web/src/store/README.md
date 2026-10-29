@@ -79,3 +79,7 @@ src/store/
 - 普通 store：`zustand` + `combine` 中间件。
 - 持久化 store：`createPersistStore`，默认 `localStorage`，第 4 个参数传 `'indexedDB'` 启用 IndexedDB。
 - 性能优化：使用 `useShallow` 避免不必要的重渲染。
+
+### 插件发布记录补偿
+
+`plugin/publishRecordRecovery.ts` 使用持久化 store 保存平台已接受的发布结果；本地记录保存失败每 20 秒重试，并在页面重新初始化后恢复。固定 flowId 配合后端唯一索引去重，按用户隔离，不保存登录凭据，不会再次执行平台发布。`publishRecordRecovery.test.cjs` 覆盖网络失败、响应丢失、重启恢复、重复重试和账号切换。

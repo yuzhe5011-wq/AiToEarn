@@ -23,10 +23,11 @@ import lodash from 'lodash'
 import { create } from 'zustand'
 import { combine } from 'zustand/middleware'
 import { createChannelAccountApi } from '@/api/accounts/account.api'
-import { createChannelPublishFlowApi } from '@/api/channels/channel.api'
+import { getChannelPublishRecordsApi } from '@/api/channels/channel.api'
+import { useCalendarTiming } from '@/app/[lng]/accounts/components/CalendarTiming/useCalendarTiming'
 import { PlatType } from '@/app/config/platConfig'
 import { directTrans } from '@/app/i18n/client'
-import { buildChannelPublishFlowParams, getPublishRecordIdFromFlow, isPublishTitleSupported } from '@/components/PublishDialog/PublishDialog.util'
+import { buildChannelPublishFlowParams, isPublishTitleSupported } from '@/components/PublishDialog/PublishDialog.util'
 import { PluginVersionLast } from '@/constant'
 import { useAccountStore } from '@/store/account'
 import { isPlatformEnabledSync } from '@/store/platformMetadata'
@@ -42,6 +43,7 @@ import {
   createInitialPlatformAccounts,
   generateId,
 } from './plugin.utils'
+import { queuePublishRecord, startPublishRecordRecovery } from './publishRecordRecovery'
 import {
   PlatformTaskStatus,
   PLUGIN_SUPPORTED_PLATFORMS,
@@ -185,6 +187,8 @@ function getWxSphLinkAnchor(result: { workId?: string, platformData?: unknown })
 }
 
 async function createPluginPublishRecord(params: {
+  userId: string
+  requestId: string
   item: PluginPublishItem
   result: PublishResult
   publishTime?: string
@@ -201,7 +205,7 @@ async function createPluginPublishRecord(params: {
   })
 
   if (!flowParams)
-    return undefined
+    throw new Error('Missing publication record content')
 
   applyPluginPublishResultToFlow(
     flowParams,
@@ -209,11 +213,15 @@ async function createPluginPublishRecord(params: {
     params.result,
   )
 
-  const recordRes = await createChannelPublishFlowApi(flowParams)
-  if (recordRes?.code !== 0)
-    return undefined
-
-  return getPublishRecordIdFromFlow(recordRes.data, params.item.account.id)
+  const userId = params.userId
+  const flowId = `plugin-${params.requestId}`
+  flowParams.flowId = flowId
+  return queuePublishRecord(flowId, {
+    userId,
+    accountId: params.item.account.id,
+    flow: flowParams,
+    result: params.result,
+  })
 }
 
 function applyPluginPublishResultToFlow(
@@ -274,7 +282,7 @@ async function startWxSphLinkPolling(params: {
 }) {
   const anchor = getWxSphLinkAnchor(params.result)
   if (!anchor || !window.AIToEarnPlugin?.wxSphStartLinkPolling)
-    return
+    return false
 
   const token = useUserStore.getState().token
   const apiBaseUrl = getPluginApiBaseUrl()
@@ -292,6 +300,7 @@ async function startWxSphLinkPolling(params: {
     if (response?.code === WX_SPH_LOGIN_EXPIRED_CODE) {
       await notifyWxSphLoginRequired()
     }
+    return response?.success === true
   }
   catch (error) {
     const errorCode = getPluginErrorCode(error)
@@ -299,6 +308,7 @@ async function startWxSphLinkPolling(params: {
       await notifyWxSphLoginRequired()
     }
     console.error('Failed to start WxSph link polling:', error)
+    return false
   }
 }
 
@@ -577,7 +587,7 @@ export const usePluginStore = create(
           return
         }
 
-        // 已就绪，刷新账号信息
+        // 已就绪，刷新账号信息。
         await methods.refreshAllPlatformAccounts()
         // 初始化完成
         set({ isInitializing: false })
@@ -650,6 +660,17 @@ export const usePluginStore = create(
         if (status !== Status.READY)
           return createInitialPlatformAccounts()
 
+        startPublishRecordRecovery(async (recordId, job) => {
+          if (job.flow.items[0]?.platform === PlatType.WxSph && !job.result.shareLink) {
+            if (!window.AIToEarnPlugin?.wxSphStartLinkPolling)
+              throw new Error('Waiting for the plugin to resume result tracking')
+            const started = await startWxSphLinkPolling({ recordId, accountId: job.accountId, result: job.result })
+            if (!started)
+              throw new Error('Waiting to resume result tracking')
+          }
+          await useCalendarTiming.getState().refreshCurrentPubRecords()
+        })
+
         const accounts: PlatformAccountsMap = createInitialPlatformAccounts()
 
         await Promise.all(
@@ -673,6 +694,21 @@ export const usePluginStore = create(
           if (hasChange) {
             useAccountStore.setState(mergedAccountState)
           }
+        }
+
+        // 补录的平台已接受记录仅恢复回查，不触发发布。
+        try {
+          const response = await getChannelPublishRecordsApi({ accountType: PlatType.WxSph, status: 7 })
+          const data = response?.data
+          const records = Array.isArray(data) ? data : data?.records || data?.list || data?.items || data?.rows || []
+          for (const record of records) {
+            if (record.linkMeta?.recordRecovery === true && record.accountId && record.linkStatus === 'pending') {
+              await startWxSphLinkPolling({ recordId: record.id, accountId: record.accountId, result: { workId: record.dataId, platformData: record.linkMeta } })
+            }
+          }
+        }
+        catch (error) {
+          console.error('恢复补录记录回查失败:', error)
         }
 
         return accounts
@@ -804,7 +840,12 @@ export const usePluginStore = create(
               publishProgress: progress,
               platformProgress: updatedProgress,
             })
-            onProgress?.(progress)
+            try {
+              onProgress?.(progress)
+            }
+            catch (error) {
+              console.error('插件发布进度回调失败:', error)
+            }
           })
 
           // 发布完成，移除该账号的发布状态，更新进度为完成
@@ -1007,6 +1048,9 @@ export const usePluginStore = create(
        */
       async executePluginPublish(params: ExecutePluginPublishParams): Promise<void> {
         const { items, platformTaskIdMap, publishTime, onProgress, onComplete, userTaskId, materialGroupId, materialId } = params
+        const recordOwnerId = useUserStore.getState().userInfo?.id
+        if (!recordOwnerId)
+          throw new Error('Missing publication record owner')
         let firstPublishRecordId: string | undefined
 
         // 创建发布任务
@@ -1171,6 +1215,36 @@ export const usePluginStore = create(
               }
             })
 
+            // 发布成功后，先保留恢复快照并保存本地记录。
+            let recordSaved = false
+            set({ isCreatingRecord: true })
+            try {
+              const publishRecordId = await createPluginPublishRecord({
+                userId: recordOwnerId,
+                requestId,
+                item,
+                result,
+                publishTime,
+                userTaskId,
+                materialGroupId,
+                materialId,
+              })
+              // 发布记录创建成功，记录首个 publishRecordId
+              if (publishRecordId) {
+                recordSaved = true
+                if (!firstPublishRecordId) {
+                  firstPublishRecordId = publishRecordId
+                }
+              }
+            }
+            catch (recordError) {
+              console.error('创建发布记录失败，已保留恢复任务:', recordError)
+              toast.warning(directTrans('plugin', 'recordRecoveryPending'))
+            }
+            finally {
+              set({ isCreatingRecord: false })
+            }
+
             // 发布成功，更新任务状态
             methods.updatePlatformTaskByRequestId(requestId, {
               status: PlatformTaskStatus.COMPLETED,
@@ -1184,51 +1258,24 @@ export const usePluginStore = create(
             })
 
             // 触发成功进度回调
-            onProgress?.({
-              stage: 'complete',
-              progress: 100,
-              message: '发布成功',
-              timestamp: Date.now(),
-              accountId,
-              platform,
-              requestId,
-              data: {
-                workId: result.workId,
-                shareLink: result.shareLink,
-                platformData: result.platformData,
-              },
-            })
-
-            // 发布成功后，创建发布记录
-            set({ isCreatingRecord: true })
             try {
-              const publishRecordId = await createPluginPublishRecord({
-                item,
-                result,
-                publishTime,
-                userTaskId,
-                materialGroupId,
-                materialId,
+              onProgress?.({
+                stage: 'complete',
+                progress: 100,
+                message: recordSaved ? '发布成功' : directTrans('plugin', 'recordRecoveryPending'),
+                timestamp: Date.now(),
+                accountId,
+                platform,
+                requestId,
+                data: {
+                  workId: result.workId,
+                  shareLink: result.shareLink,
+                  platformData: result.platformData,
+                },
               })
-              // 发布记录创建成功，记录首个 publishRecordId
-              if (publishRecordId) {
-                if (!firstPublishRecordId) {
-                  firstPublishRecordId = publishRecordId
-                }
-                if (platform === PlatType.WxSph) {
-                  startWxSphLinkPolling({
-                    recordId: publishRecordId,
-                    accountId,
-                    result,
-                  })
-                }
-              }
             }
-            catch (recordError) {
-              console.error('创建发布记录失败:', recordError)
-            }
-            finally {
-              set({ isCreatingRecord: false })
+            catch (error) {
+              console.error('插件发布完成回调失败:', error)
             }
           }
           catch (error) {

@@ -1,4 +1,5 @@
 {
+  "recordRecoveryPending": "La publication a été acceptée. L’enregistrement sera réessayé automatiquement. Ne republiez pas.",
   "status": {
     "unknown": "Inconnu",
     "checking": "Vérification...",

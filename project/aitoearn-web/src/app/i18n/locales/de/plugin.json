@@ -1,4 +1,5 @@
 {
+  "recordRecoveryPending": "Der Beitrag wurde angenommen. Der Datensatz wird automatisch erneut gespeichert. Nicht erneut veröffentlichen.",
   "status": {
     "unknown": "Unbekannt",
     "checking": "Wird geprüft...",

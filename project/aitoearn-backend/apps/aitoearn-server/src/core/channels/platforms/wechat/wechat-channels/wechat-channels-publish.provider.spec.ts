@@ -66,7 +66,7 @@ describe('wechat channels publish provider', () => {
     })
   })
 
-  it.each([60_000, -60_000])('distinguishes future accepted schedules from immediate submissions (%i ms)', async (offset) => {
+  it.each([60_000, -60_000])('preserves accepted schedules when saving is delayed (%i ms)', async (offset) => {
     const scheduledTime = Date.now() + offset
     const result = await createProvider().publish({
       taskId: 'task_1',
@@ -76,7 +76,7 @@ describe('wechat channels publish provider', () => {
       credential: { accessToken: '' },
       option: { workId: 'media_md5', linkStatus: 'pending', linkMeta: { scheduledTime } },
     })
-    expect(result.scheduledAt).toEqual(offset > 0 ? new Date(scheduledTime) : undefined)
+    expect(result.scheduledAt).toEqual(new Date(scheduledTime))
     expect(result.linkMeta?.scheduledTime).toBe(scheduledTime)
   })
 
