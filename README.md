@@ -38,15 +38,15 @@ AiToEarn 通过 **AI Agent自动化**，帮助 OPC（一人公司）、创作者
 | 方式 | 适合谁 | 需要部署吗 |
 |------|--------|-----------|
 | [① 打开网站直接用](#use-web) | 所有用户 | ❌ 不需要 |
-| [② 在龙虾 OpenClaw 中用](#use-in-openclaw) | 龙虾用户 | ❌ 不需要 |
-| [③ 在 Claude / Cursor 等 AI 助手中用](#use-in-claude) | AI 工具用户 | ❌ 不需要 |
+| [③ 在 Claude / Cursor 等 AI 助手中用](https://docs.aitoearn.ai/zh/use/introduction) | AI 工具用户 | ❌ 不需要 |
 | [④ Docker 一键部署](#use-docker) | 想私有化部署的团队 | ✅ 需要服务器 |
 | [⑤ 源码开发](#use-source) | 开发者 | ✅ 需要开发环境 |
 
-> 💡 **方式 ②③④ 都需要先获取 API Key**，请先看 [如何获取 API Key](#get-api-key)。
+> 💡 **方式 ③④ 都需要先获取 API Key**，请先看 [如何获取 API Key](#get-api-key)。
 
 ## 最新动态
 
+- **2026-10-29**: 移除仓库内置的 Electron 桌面客户端项目（aitoearn-electron），聚焦 Web 与服务端能力，并同步精简文档。
 - **2026-06-23**: [2.5 version](https://github.com/yikart/AiToEarn/releases/tag/v2.5.0) — Relay 配置改为在配置管理界面中操作，并拆分为 Server Relay 与 AI Relay：Server Relay 用于发布平台授权，AI Relay 用于使用平台提供的 AI 模型，新增[开放平台](https://docs.aitoearn.cn/)。
 - **2026-05-21**: [2.4 version](https://github.com/yikart/AiToEarn/releases/tag/v2.4.0) — 草稿生成新增支持 HappyHorse 1.0 和 Seedance 2.0，增强视频/图文草稿批量生成、多模型选择、参考图片/视频、目标平台限制与文案提示词；带来全新界面风格，并增强 Twitter/X 探索与互动能力。
 - **2026-04-20**: OpenClaw（龙虾）新增 AiToEarn 赚钱支持，可在龙虾中直接接收并执行内容变现任务。
@@ -161,7 +161,7 @@ AiToEarn 最核心的目标：**帮助每一位创作者赚钱**。
 
 <h2 id="get-api-key">🔑 如何获取 API Key（后续步骤的前置条件）</h2>
 
-> 以下的方式 ②③④ 都需要 API Key。只需获取一次，所有方式通用。
+> 以下的方式 ③④ 都需要 API Key。只需获取一次，所有方式通用。
 
 **3 步获取**：
 
@@ -170,32 +170,6 @@ AiToEarn 最核心的目标：**帮助每一位创作者赚钱**。
 3. 在 **API Key** 中点击创建，复制生成的 Key
 
 <img src="presentation/app-screenshot/0.%20api-key/api-key-settings.png" alt="获取 API Key" width="600">
-
----
-
-<h2 id="use-in-openclaw">② 在龙虾 OpenClaw 中使用</h2>
-
-> 前置条件：已 [获取 API Key](#get-api-key)
-
-
-**请在服务器终端输入以下命令！请在服务器终端输入以下命令！请在服务器终端输入以下命令！**
-
-**安装插件**
-
-```bash
-npx -y @aitoearn/openclaw-plugin-cli
-```
-
-首次运行后会先让你选择环境并输入 API Key。请确保环境与 Key 匹配：
-
-- 中国版：使用 `aitoearn.cn` 获取的 API Key
-- 国际版：使用 `aitoearn.ai` 获取的 API Key
-
-环境和 Key 不匹配会导致 401。
-
-安装完成后，你就可以在 OpenClaw 中直接接收并执行 AiToEarn 的赚钱任务：
-
-<img src="presentation/openclaw-earn-demo.png" alt="在 OpenClaw 中执行 AiToEarn 赚钱任务" width="360">
 
 ---
 
@@ -326,30 +300,6 @@ pnpm run dev
 
 </details>
 
-<details>
-<summary>🖥️ 启动 Electron 桌面项目</summary>
-
-```bash
-# 克隆仓库
-git clone https://github.com/yikart/AttAiToEarn.git
-
-# 进入目录
-cd AttAiToEarn
-
-# 安装依赖
-npm install
-
-# 编译 sqlite（better-sqlite3 需要 node-gyp 和本地 Python）
-npm run rebuild
-
-# 启动开发
-npm run dev
-```
-
-Electron 项目为 AiToEarn 提供桌面客户端。
-
-</details>
-
 ## 贡献指南
 
 请查看 [贡献指南](./CONTRIBUTING.md) 开始参与。
@@ -361,7 +311,7 @@ Electron 项目为 AiToEarn 提供桌面客户端。
 - Telegram: [https://t.me/harryyyy2025](https://t.me/harryyyy2025)
 - 微信：扫码添加
 
-<img src="presentation/wechat-0706.png" alt="微信二维码" width="200">
+<img src="presentation/wechat-1029.png" alt="微信二维码" width="200">
 
 ## 推荐
 - [AtomGit托管](https://atomgit.com/yikart/AitoEarn)
