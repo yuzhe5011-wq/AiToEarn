@@ -3,7 +3,7 @@
  * 发布日期选择器组件 - 支持立即发布和定时发布两种模式
  * - 点击左侧按钮打开日期选择器
  * - 底部 Now 按钮：选择立即发布
- * - 底部 Confirm 按钮：确认定时发布
+ * - 发布弹框选择时间后即时生效；已有排期的修改保留提交确认
  */
 
 import type { Dayjs } from 'dayjs'
@@ -20,7 +20,7 @@ import { cn } from '@/utils/className'
 import { toast } from '@/utils/ui/toast'
 import { DateTimePicker } from './DateTimePicker'
 
-const QUICK_PUBLISH_TIMES = ['07:45', '11:50', '12:15', '18:00', '19:30', '21:00']
+const QUICK_PUBLISH_TIMES = ['07:45', '11:50', '12:30', '17:00', '18:00', '20:00']
 
 export interface IPublishDatePickerRef {}
 
@@ -67,7 +67,11 @@ const PublishDatePicker = memo(
       const updatePubTime = onValueChange ?? setPubTime
 
       const handleCalendarChange = (date: Dayjs) => {
-        setTempDate(date)
+        const selected = date.second(0).millisecond(0)
+        setTempDate(selected)
+        if (!inline) {
+          updatePubTime(selected.format())
+        }
       }
 
       const minTime = now.startOf('minute').add(minLeadMinutes, 'minute')
@@ -165,7 +169,11 @@ const PublishDatePicker = memo(
                     size="sm"
                     className="tabular-nums"
                     disabled={disabled || loading}
-                    onClick={() => setTempDate(candidate)}
+                    onClick={() => {
+                      handleCalendarChange(candidate)
+                      if (!inline)
+                        setMenuOpen(false)
+                    }}
                     data-testid={`publish-quick-time-${time.replace(':', '')}`}
                   >
                     {time}
@@ -189,17 +197,19 @@ const PublishDatePicker = memo(
               </Button>
             ) : <span />}
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleScheduleConfirm}
-              className="gap-2 cursor-pointer"
-              disabled={loading || !canConfirm}
-              data-testid="publish-schedule-confirm-button"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-              {submitText ?? t('buttons.confirm')}
-            </Button>
+            {inline && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleScheduleConfirm}
+                className="gap-2 cursor-pointer"
+                disabled={loading || !canConfirm}
+                data-testid="publish-schedule-confirm-button"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                {submitText ?? t('buttons.confirm')}
+              </Button>
+            )}
           </div>
         </div>
       )
