@@ -25,7 +25,7 @@
 ### Remotes and branches
 
 - `origin` 是用户的 GitHub Fork；`upstream` 是官方仓库。默认只向 `origin` 推送，不向 `upstream` 推送。
-- 本地 `main` 跟踪 `origin/main`。Fork 的 `main` 是集成分支，发布后必须同时包含最新 `upstream/main` 和已交付的二开代码。
+- 本地 `main` 跟踪 `origin/main`。Fork 的 `main` 是集成分支，默认只集成 Fork 自身的 main 与已交付二开代码；仅在用户明确要求同步上游时，才获取和合入 `upstream/main`。
 - `codex/custom-development` 跟踪 `origin/codex/custom-development`，作为日常二开分支。
 - 不使用强制推送覆盖远程历史。
 
@@ -35,11 +35,11 @@
 
 1. 检查工作区、差异和提交内容。只暂存本次确认要交付的文件；不要使用 `git add .`。本地密钥、环境配置、Docker 覆盖文件和生成产物默认不上传，除非用户明确要求。
 2. 在 `codex/custom-development` 提交二开改动。
-3. 获取 `origin` 与 `upstream` 的最新引用，并检查 `upstream/main` 相对 Fork `main` 的更新，以及远程开发分支上的新提交。
-4. 将 `origin/main` 和最新 `upstream/main` 合入本地 `main`；将 `origin/codex/custom-development` 的远程新提交合入本地开发分支；再将本地 `main` 合入 `codex/custom-development`，使开发分支建立在最新集成基线上。
+3. 默认只获取 `origin` 的最新引用，检查远程 main 和开发分支的新提交；只有用户明确要求同步上游时，才获取 `upstream` 并检查其更新。
+4. 将 `origin/main` 合入本地 `main`；仅在用户明确要求同步上游时，再合入最新 `upstream/main`。将 `origin/codex/custom-development` 的远程新提交合入本地开发分支，再将本地 `main` 合入 `codex/custom-development`。
 5. 完成项目规定的验证后，将开发分支推送到 `origin/codex/custom-development`。
-6. 将开发分支合入本地 `main`。推送前确认最新 `upstream/main` 和已交付开发分支的提交都包含在本地 `main` 中，并检查工作区没有未解决的冲突。
-7. 推送到 `origin/main`。推送后重新获取远程状态，确认 `origin/main` 同时包含最新 `upstream/main` 与开发分支提交；若上游在同步期间又前进，则继续同步和核验，直到确认完成。
+6. 将开发分支合入本地 `main`。推送前确认已交付开发分支的提交包含在本地 `main` 中；本次明确要求同步上游时，还需确认最新 `upstream/main` 已包含在内，并检查工作区没有未解决的冲突。
+7. 推送到 `origin/main`。推送后重新获取 `origin` 状态，确认远程 main 包含开发分支提交。仅在本次明确要求同步上游时，再获取和核验 `upstream/main`；若上游在同步期间又前进，继续同步和核验。
 8. 完成后切回 `codex/custom-development`，并汇报同步、验证、提交和推送结果。
 
 ### 推送完成后的汇报格式
