@@ -167,5 +167,7 @@
     "viewUpdateGuide": "更新ガイドを見る",
     "latestDescription": "現在のプラグインは最新バージョンです。このまま正常に利用できます。",
     "unavailableDescription": "現在プラグインのバージョンを取得できません。しばらくしてからこのダイアログを開き直してください。"
-  }
+  },
+  "publishRecoveryWaiting": "ページ更新後、拡張機能の投稿結果を確認中",
+  "publishRecoveryRejected": "拡張機能の記録では投稿は受け付けられていません"
 }

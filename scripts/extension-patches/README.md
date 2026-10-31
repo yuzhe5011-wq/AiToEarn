@@ -2,7 +2,7 @@
 
 ## 中文
 
-这是对官方 AiToEarn Extension 3.3.10 的本地修补工具，不是官方发行版。本地版本为 **3.3.10.4**。
+这是对官方 AiToEarn Extension 3.3.10 的本地修补工具，不是官方发行版。本地版本为 **3.3.10.5**。
 
 - 设置 `objectDesc.shortTitle: [{ shortTitle: title }]`，要求标题为 6–16 个 Unicode 码点。
 - 保留活动的 `questFlag`、`questInfo`。标记为推广但组件信息不完整时阻止提交，要求重新选择。
@@ -17,11 +17,12 @@
 ```sh
 python3 scripts/patch_aitoearn_extension.py \
   --crx .local/plugin-version-check/aitoearn-extension-china.crx \
-  --output .local/extension-staging/3.3.10.4
-node --check .local/extension-staging/3.3.10.4/js/background.js
-node scripts/extension-patches/test-payload.cjs .local/extension-staging/3.3.10.4
+  --output .local/extension-staging/3.3.10.5
+node --check .local/extension-staging/3.3.10.5/js/background.js
+node scripts/extension-patches/test-payload.cjs .local/extension-staging/3.3.10.5
 node scripts/extension-patches/test-web-options.cjs
 node scripts/extension-patches/test-audit.cjs
+node scripts/extension-patches/test-refresh-recovery.cjs .local/extension-staging/3.3.10.5
 python3 -m unittest discover -s scripts/extension-patches -p 'test_*.py' -v
 ```
 
@@ -38,19 +39,20 @@ python3 -m unittest discover -s scripts/extension-patches -p 'test_*.py' -v
 - 使用已有 mediaMd5sum 关联项目发布记录 ID，不新增后端接口、不增加平台查询或轮询次数。
 
 只保留最近 100 次、最长 30 天，读写时清理过期数据。没有完整搜索列表、上传进度、媒体 URL、Cookie、Token、鉴权头或签名地址。日志存储失败不会改变原发布结果。
+授权网站可通过只读消息接口按 requestId、账号和定时时间精确查询单次结果，用于页面刷新后的恢复；不导出完整诊断列表，不触发平台请求。
 插件后台可通过 `__aitoearnLocalWxAudit.read()` 读取，或 `__aitoearnLocalWxAudit.exportRecords()` 导出脱敏 JSON。
 
 `wx-channels-fields.js` 是可读的字段实现；请求构造测试执行完整供应商发布类。脱敏 fixture 不包含 Cookie、登录凭据或真实活动标识。
 
 ## English
 
-Local version **3.3.10.4** modifies the official AiToEarn Extension 3.3.10; it is not an official release.
+Local version **3.3.10.5** modifies the official AiToEarn Extension 3.3.10; it is not an official release.
 It maps short titles, retains activity questFlag/questInfo and builds the mini-game component plus extReading fields observed in a successful native save request.
 For questFlag=1 and componentType=2, extReading uses empty link/title with urlType=9. Component ID, type and title come from the activity; appearance values are zero.
 Incomplete promotion metadata blocks submission. Ordinary activities do not receive a mini-game component.
 The payload mapping has been checked against native samples. Actual behavior after a local patch update still needs verification; offline tests alone do not establish platform success.
 
-Minimal local diagnostics keep one updated record per publishing attempt, including the received/submitted activity comparison, attachment fields, response codes and project-record association. Retention is capped at 100 attempts and 30 days. No credentials, media URLs, full search lists or upload progress are recorded. Storage errors do not alter publication results; accepted means API acceptance only. Read/export through `__aitoearnLocalWxAudit.read()` / `exportRecords()` in the extension background context.
+Minimal local diagnostics keep one updated record per publishing attempt, including the received/submitted activity comparison, attachment fields, response codes and project-record association. Retention is capped at 100 attempts and 30 days. No credentials, media URLs, full search lists or upload progress are recorded. Storage errors do not alter publication results; accepted means API acceptance only. Authorized websites can query one attempt by request ID, account and scheduled time to recover after a refresh. This read-only bridge returns no full logs and makes no platform request. Read/export through `__aitoearnLocalWxAudit.read()` / `exportRecords()` in the extension background context.
 
 Use the build/check commands above. Load the unpacked output in Chrome; reload the extension after updating an existing installed directory, then refresh AiToEarn.
 The builder pins the original CRX SHA-256, preserves its public key/ID, permissions and licenses, and removes automatic updates for the local build.
@@ -59,13 +61,13 @@ The tool does not upload, publish, schedule or install automatically. Fixtures c
 
 ## 日本語
 
-ローカル版 **3.3.10.4** は公式 AiToEarn Extension 3.3.10 を基にした修正版であり、公式リリースではありません。
+ローカル版 **3.3.10.5** は公式 AiToEarn Extension 3.3.10 を基にした修正版であり、公式リリースではありません。
 短いタイトルとイベントの questFlag / questInfo を保持し、公式画面で保存に成功した構造に合わせてミニゲームの component と extReading を生成します。
 questFlag=1・componentType=2 の場合、extReading は空の link/title と urlType=9 を使用します。component の ID・種類・名前はイベントから取得し、表示設定はゼロです。
 不完全なプロモーション情報は送信を停止します。通常のイベントにはゲームコンポーネントを追加しません。
 構造は公式サンプルと照合しています。更新後の実際の動作は確認が必要であり、オフライン検証だけで投稿成功とは判断できません。
 
-診断ログは投稿ごとに1件を更新し、活動の受信・送信一致、添付項目、応答コード、プロジェクト記録との関連を保持します。最大100件・30日です。認証情報、メディアURL、検索一覧、アップロード進捗は保存しません。保存失敗は投稿結果を変更せず、accepted はAPI受付のみを示します。拡張のバックグラウンドで `__aitoearnLocalWxAudit.read()` / `exportRecords()` を利用できます。
+診断ログは投稿ごとに1件を更新し、活動の受信・送信一致、添付項目、応答コード、プロジェクト記録との関連を保持します。最大100件・30日です。認証情報、メディアURL、検索一覧、アップロード進捗は保存しません。保存失敗は投稿結果を変更せず、accepted はAPI受付のみを示します。許可済みサイトはリクエストID・アカウント・予約時刻が一致する1件のみ読み取り、更新後に復元できます。全ログの公開やプラットフォームへの再送信は行いません。拡張のバックグラウンドで `__aitoearnLocalWxAudit.read()` / `exportRecords()` を利用できます。
 
 上記のビルド・検証後、Chrome で出力ディレクトリーを読み込んでください。既存フォルダーを更新した場合は拡張機能を再読み込みし、AiToEarn を更新してください。
 元の公開鍵・ID・権限・ライセンスを保持し、ローカル版の自動更新設定を削除します。切替前に必要な設定をバックアップしてください。

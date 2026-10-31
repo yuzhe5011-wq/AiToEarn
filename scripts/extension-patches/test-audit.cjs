@@ -68,6 +68,16 @@ async function publish(env,settings={}) {
   records=clone(await env.audit.read())
   assert.equal(records.length,1);checks++
   assert.equal(records[0].projectRecordId,'project-record-1');checks++
+  const recovered=await env.audit.lookup({requestId:'request-1',accountId:records[0].accountId,scheduledTime:records[0].requestedScheduledTime})
+  assert.equal(recovered.success,true);checks++
+  assert.equal(recovered.result.status,'accepted');checks++
+  assert.equal(recovered.result.mediaMd5sum,'media-1');checks++
+  assert.equal(recovered.result.submission,undefined);checks++
+  for(const mismatch of [{accountId:'another-account'},{requestId:'another-request'},{scheduledTime:1}]) {
+    const result=await env.audit.lookup({requestId:'request-1',accountId:records[0].accountId,scheduledTime:records[0].requestedScheduledTime,...mismatch})
+    assert.equal(result.result.status,'missing');checks++
+  }
+  assert.equal((await env.audit.lookup({})).success,false);checks++
   const sets=env.state.sets
   await env.audit.associate({mediaMd5sum:'media-1',recordId:'project-record-1'})
   await env.audit.associate({mediaMd5sum:'unknown',recordId:'unknown'})

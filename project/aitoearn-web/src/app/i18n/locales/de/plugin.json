@@ -167,5 +167,7 @@
     "viewUpdateGuide": "Update-Anleitung ansehen",
     "latestDescription": "Ihr Plugin ist bereits auf dem neuesten Stand und kann normal weiterverwendet werden.",
     "unavailableDescription": "Die Plugin-Version konnte derzeit nicht ausgelesen werden. Öffnen Sie diesen Dialog später erneut."
-  }
+  },
+  "publishRecoveryWaiting": "Seite neu geladen. Das ursprüngliche Veröffentlichungsergebnis wird geprüft",
+  "publishRecoveryRejected": "Die Plattform hat diese Veröffentlichung laut Erweiterung nicht angenommen"
 }

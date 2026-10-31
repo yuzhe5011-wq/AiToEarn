@@ -16,7 +16,7 @@ import zipfile
 
 SOURCE_SHA256 = 'aa6f51104fa077aa9902b164a4caf9113b0e5451a39ca2b327477694d552f2f5'
 SOURCE_VERSION = '3.3.10'
-LOCAL_VERSION = '3.3.10.4'
+LOCAL_VERSION = '3.3.10.5'
 EXTENSION_ID = 'hnmocdhmnfgcjnedmdgfefcobideaeja'
 ANCHOR = 'objectDesc:{mpTitle:"",description:t.filter(Boolean).join(" ")'
 REPLACEMENT = ('objectDesc:{mpTitle:"",'
@@ -48,7 +48,25 @@ ASSOCIATION_REPLACEMENT = ('return await this.saveJob(s),'
 AUDIT_PATCHES = [(CREATE_ANCHOR, CREATE_REPLACEMENT, 'audit create'),
                  (CONTEXT_ANCHOR, CONTEXT_REPLACEMENT, 'audit context'),
                  (API_ANCHOR, API_REPLACEMENT, 'audit request'),
-                 (ASSOCIATION_ANCHOR, ASSOCIATION_REPLACEMENT, 'audit association')]
+                 (ASSOCIATION_ANCHOR, ASSOCIATION_REPLACEMENT, 'audit association'),
+                 ('D=[p,m,g,f,b,k,S,A,T,I,C,E]',
+                  'D=[p,m,g,f,b,k,S,A,T,I,C,E,"HOME_INJECT_LOCAL_WX_PUBLISH_RESULT"]', 'recovery permission'),
+                 ('case T:return await this.handleWxSphStartLinkPolling(n);',
+                  'case "HOME_INJECT_LOCAL_WX_PUBLISH_RESULT":return await globalThis.__aitoearnLocalWxAudit.lookup(n);case T:return await this.handleWxSphStartLinkPolling(n);', 'recovery dispatch')]
+
+
+CONTENT_RECOVERY_ANCHOR = 'case E.WX_SPH_START_LINK_POLLING:'
+CONTENT_RECOVERY_REPLACEMENT = ('case "LOCAL_WX_SPH_PUBLISH_RESULT":await async function(e,r){'
+    'try{const result=await T({action:"HOME_INJECT_LOCAL_WX_PUBLISH_RESULT",payload:e},n.REQUEST);'
+    'window.postMessage({source:s,type:"LOCAL_WX_SPH_PUBLISH_RESULT_RESPONSE",requestId:r,result},window.location.origin)'
+    '}catch{window.postMessage({source:s,type:"LOCAL_WX_SPH_PUBLISH_RESULT_RESPONSE",requestId:r,result:{success:false}},window.location.origin)}'
+    '}(_.payload,r);break;' + CONTENT_RECOVERY_ANCHOR)
+
+
+def patch_content(source: str) -> str:
+    if source.count(CONTENT_RECOVERY_ANCHOR) != 1:
+        raise ValueError('Unexpected vendor bundle: exact content recovery anchor required')
+    return source.replace(CONTENT_RECOVERY_ANCHOR, CONTENT_RECOVERY_REPLACEMENT, 1)
 
 
 def patch_background(source: str) -> str:
@@ -132,6 +150,7 @@ def build(crx_path: Path, output: Path) -> dict:
         if manifest['version'] != SOURCE_VERSION:
             raise ValueError('Unexpected extension version')
         patched = patch_background(archive.read('js/background.js').decode('utf-8'))
+        content = patch_content(archive.read('js/content_script_home.js').decode('utf-8'))
         # Validate all paths and inputs before creating output.
         for entry in archive.infolist():
             path = PurePosixPath(entry.filename)
@@ -147,12 +166,13 @@ def build(crx_path: Path, output: Path) -> dict:
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_bytes(archive.read(entry))
     manifest['version'] = LOCAL_VERSION
-    manifest['version_name'] = SOURCE_VERSION + ' local mini-game audit patch 4'
+    manifest['version_name'] = SOURCE_VERSION + ' local mini-game recovery patch 5'
     manifest['name'] = 'AiToEarn Extension (Local Short Title Patch)'
     manifest['key'] = key
     manifest.pop('update_url', None)
     (output / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     (output / 'js/background.js').write_text(patched, encoding='utf-8')
+    (output / 'js/content_script_home.js').write_text(content, encoding='utf-8')
     (output / 'js/wx-channels-fields.js').write_bytes(helper.read_bytes())
     (output / 'js/wx-channels-audit.js').write_bytes(audit.read_bytes())
     report = {
@@ -161,7 +181,7 @@ def build(crx_path: Path, output: Path) -> dict:
         'short_title_patch': True, 'mini_game_attachment_implemented': True,
         'activity_quest_metadata_preserved': True,
         'native_update_payload_matched': True, 'platform_publish_verified': False,
-        'minimal_publish_audit': True, 'audit_retention_count': 100, 'audit_retention_days': 30,
+        'refresh_result_recovery': True, 'minimal_publish_audit': True, 'audit_retention_count': 100, 'audit_retention_days': 30,
         'installed': False, 'permissions_changed': False,
         'background_sha256': hashlib.sha256(patched.encode()).hexdigest(),
         'audit_helper_sha256': hashlib.sha256(audit.read_bytes()).hexdigest(),

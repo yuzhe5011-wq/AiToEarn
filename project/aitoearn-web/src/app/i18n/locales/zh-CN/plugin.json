@@ -171,5 +171,7 @@
     "viewUpdateGuide": "查看更新教程",
     "latestDescription": "当前插件已经是最新版本，可以继续正常使用。",
     "unavailableDescription": "暂时无法读取插件版本号，您可以稍后重新打开弹框再试。"
-  }
+  },
+  "publishRecoveryWaiting": "页面已刷新，正在确认插件发布结果",
+  "publishRecoveryRejected": "插件记录显示平台未接受本次提交"
 }

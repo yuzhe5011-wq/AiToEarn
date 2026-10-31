@@ -128,7 +128,7 @@ for(const title of ['', '短标题', '这是一条超过十六个字而且还在
   assert.throws(()=>build({title}), /6–16/); checks++
 }
 const manifest=JSON.parse(fs.readFileSync(path.join(dir,'manifest.json'),'utf8'))
-assert.equal(manifest.version,'3.3.10.4'); checks++
+assert.equal(manifest.version,'3.3.10.5'); checks++
 assert.equal(manifest.update_url,undefined); checks++
 const report=JSON.parse(fs.readFileSync(path.join(dir,'local-patch-report.json'),'utf8'))
 assert.equal(report.mini_game_attachment_implemented,true); checks++

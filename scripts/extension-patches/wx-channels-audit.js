@@ -184,12 +184,26 @@
     return records
   }
 
+  // Return only one exactly matched attempt to the already authorized website.
+  async function lookup(params) {
+    if (!params || typeof params.requestId !== 'string' || typeof params.accountId !== 'string')
+      return { success: false }
+    const record = (await read()).find(item => item.requestId === params.requestId
+      && item.accountId === params.accountId && item.requestedScheduledTime === params.scheduledTime)
+    if (!record) return { success: true, result: { status: 'missing' } }
+    return { success: true, result: {
+      status: record.status,
+      mediaMd5sum: record.mediaMd5sum,
+      scheduledTime: record.requestedScheduledTime,
+    } }
+  }
+
   async function exportRecords() {
     return JSON.stringify({ schemaVersion: 1, records: await read() }, null, 2)
   }
 
   Object.defineProperty(globalThis, '__aitoearnLocalWxAudit', {
-    value: Object.freeze({ createVideo, beforeRequest, captureResponse, associate, read, exportRecords }),
+    value: Object.freeze({ createVideo, beforeRequest, captureResponse, associate, read, lookup, exportRecords }),
     configurable: false,
     writable: false,
   })

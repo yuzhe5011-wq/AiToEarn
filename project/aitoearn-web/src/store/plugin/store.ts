@@ -43,13 +43,14 @@ import {
   createInitialPlatformAccounts,
   generateId,
 } from './plugin.utils'
-import { queuePublishRecord, startPublishRecordRecovery } from './publishRecordRecovery'
+import { preparePublishRecord, queuePublishRecord, startPublishRecordRecovery } from './publishRecordRecovery'
 import {
   PlatformTaskStatus,
   PLUGIN_SUPPORTED_PLATFORMS,
   PluginStatus as Status,
   WX_SPH_LOGIN_EXPIRED_CODE,
 } from './types/baseTypes'
+import { getWxSphPublicationResult } from './wxSphPublishRecovery'
 
 // 启用 dayjs utc 插件
 dayjs.extend(utc)
@@ -195,8 +196,9 @@ async function createPluginPublishRecord(params: {
   userTaskId?: string
   materialGroupId?: string
   materialId?: string
+  preparedFlow?: ChannelCreatePublishFlowParams
 }) {
-  const flowParams = buildChannelPublishFlowParams([params.item], {
+  const flowParams = params.preparedFlow || buildChannelPublishFlowParams([params.item], {
     publishAt: params.publishTime || dayjs(Date.now()).utc().format(),
     userTaskId: params.userTaskId,
     materialGroupId: params.materialGroupId,
@@ -661,6 +663,17 @@ export const usePluginStore = create(
           return createInitialPlatformAccounts()
 
         startPublishRecordRecovery(async (recordId, job) => {
+          const requestId = job.flow.flowId?.replace(/^plugin-/, '')
+          if (!job.result.success) {
+            methods.updatePlatformTaskByRequestId(requestId || '', {
+              status: PlatformTaskStatus.ERROR,
+              error: job.result.failReason,
+              result: job.result,
+              progress: { stage: 'error', progress: 0, message: job.result.failReason || '', timestamp: Date.now() },
+              endTime: Date.now(),
+            })
+            return
+          }
           if (job.flow.items[0]?.platform === PlatType.WxSph && !job.result.shareLink) {
             if (!window.AIToEarnPlugin?.wxSphStartLinkPolling)
               throw new Error('Waiting for the plugin to resume result tracking')
@@ -668,7 +681,55 @@ export const usePluginStore = create(
             if (!started)
               throw new Error('Waiting to resume result tracking')
           }
+          methods.updatePlatformTaskByRequestId(requestId || '', {
+            status: PlatformTaskStatus.COMPLETED,
+            publishRecordId: recordId,
+            result: job.result,
+            progress: { stage: 'complete', progress: 100, message: directTrans('plugin', 'stage.complete'), timestamp: Date.now() },
+            endTime: Date.now(),
+          })
           await useCalendarTiming.getState().refreshCurrentPubRecords()
+        }, async (id, job) => {
+          const item = job.flow.items[0]
+          if (item?.platform !== PlatType.WxSph)
+            return undefined
+          const requestId = id.replace(/^plugin-/, '')
+          if (!get().publishTasks.some(task => task.platformTasks.some(part => part.requestId === requestId))) {
+            methods.addPublishTask({
+              title: job.flow.content.title || '',
+              platformTasks: [{
+                id: requestId,
+                requestId,
+                platform: PlatType.WxSph,
+                accountId: job.accountId,
+                params: { platform: PlatType.WxSph, title: job.flow.content.title, type: 'video' },
+                status: PlatformTaskStatus.PUBLISHING,
+                progress: { stage: 'publish', progress: 0, message: directTrans('plugin', 'publishRecoveryWaiting'), timestamp: Date.now() },
+                result: null,
+                startTime: null,
+                endTime: null,
+                error: null,
+              }],
+            })
+          }
+          const response = await getWxSphPublicationResult({
+            requestId,
+            accountId: job.accountId,
+            scheduledTime: job.scheduledTime,
+          })
+          if (!response || useUserStore.getState().userInfo?.id !== job.userId)
+            return undefined
+          if (response.status === 'rejected' || response.status === 'validation_failed')
+            return { success: false, failReason: directTrans('plugin', 'publishRecoveryRejected') }
+          if (response.status !== 'accepted' || !response.mediaMd5sum)
+            return undefined
+          const result: PublishResult = {
+            success: true,
+            workId: response.mediaMd5sum,
+            platformData: { mediaMd5sum: response.mediaMd5sum, scheduledTime: response.scheduledTime },
+          }
+          applyPluginPublishResultToFlow(job.flow, PlatType.WxSph, result)
+          return result
         })
 
         const accounts: PlatformAccountsMap = createInitialPlatformAccounts()
@@ -1197,6 +1258,28 @@ export const usePluginStore = create(
                 .filter(v => v !== '')
             }
 
+            // 先保存可恢复的内容快照，再将任务交给插件。
+            const preparedFlow = platform === PlatType.WxSph
+              ? buildChannelPublishFlowParams([item], {
+                  publishAt: publishTime || dayjs().utc().format(),
+                  userTaskId,
+                  materialGroupId,
+                  materialId,
+                  source: 'web',
+                })
+              : undefined
+            if (platform === PlatType.WxSph) {
+              if (!preparedFlow)
+                throw new Error('Missing publication record content')
+              preparedFlow.flowId = `plugin-${requestId}`
+              await preparePublishRecord(preparedFlow.flowId, {
+                userId: recordOwnerId,
+                accountId,
+                scheduledTime: publishTime ? dayjs(publishTime).valueOf() : undefined,
+                flow: preparedFlow,
+              })
+            }
+
             // 执行发布，通过 requestId 匹配进度
             const result = await methods.publish(publishParams, (progress) => {
               // 使用 requestId 精确更新进度
@@ -1223,6 +1306,7 @@ export const usePluginStore = create(
                 userId: recordOwnerId,
                 requestId,
                 item,
+                preparedFlow: preparedFlow || undefined,
                 result,
                 publishTime,
                 userTaskId,

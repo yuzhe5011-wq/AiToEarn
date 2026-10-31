@@ -171,5 +171,7 @@
     "viewUpdateGuide": "View Update Guide",
     "latestDescription": "Your plugin is already on the latest version and can continue to be used normally.",
     "unavailableDescription": "The plugin version could not be read right now. Please reopen this dialog and try again later."
-  }
+  },
+  "publishRecoveryWaiting": "Page refreshed. Checking the original plugin publication result",
+  "publishRecoveryRejected": "The plugin reports that the platform rejected this submission"
 }

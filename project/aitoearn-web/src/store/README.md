@@ -38,7 +38,7 @@ src/store/
 | `thumbnailCache.ts`       | `useThumbnailCacheStore`                 | 视频缩略图缓存                                           | 是              |
 | `draft-box/`              | `usePlanDetailStore` / `usePlanTabStore` | 草稿箱计划、详情、AI 生成配置与媒体列表同步桥            | 部分 IndexedDB  |
 | `agent/`                  | `useAgentStore`                          | AI Agent 任务管理（多任务隔离、SSE、工作流）             | 否              |
-| `plugin/`                 | `usePluginStore`                         | 浏览器插件（安装检测、账号同步、发布、发布详情弹窗状态） | 否              |
+| `plugin/`                 | `usePluginStore`                         | 浏览器插件（安装检测、账号同步、发布、发布详情弹窗状态） | 待确认与补存快照 |
 
 ## 关键边界
 
@@ -82,4 +82,6 @@ src/store/
 
 ### 插件发布记录补偿
 
-`plugin/publishRecordRecovery.ts` 使用持久化 store 保存平台已接受的发布结果；本地记录保存失败每 20 秒重试，并在页面重新初始化后恢复。固定 flowId 配合后端唯一索引去重，按用户隔离，不保存登录凭据，不会再次执行平台发布。`publishRecordRecovery.test.cjs` 覆盖网络失败、响应丢失、重启恢复、重复重试和账号切换。
+`plugin/publishRecordRecovery.ts` 在调用视频号插件前持久化原 requestId、账号、内容及定时快照，收到平台结果后再保存本地记录；本地记录保存失败每 20 秒重试，并在页面重新初始化后恢复。固定 flowId 配合后端唯一索引去重，按用户隔离，不保存登录凭据，不会再次执行平台发布。`publishRecordRecovery.test.cjs` 覆盖网络失败、响应丢失、重启恢复、重复重试和账号切换。
+
+`wxSphPublishRecovery.ts` 通过授权插件的只读消息接口查询原请求结果。页面刷新后恢复等待确认任务；仅 accepted 结果补存并注册回查，明确拒绝恢复失败，其余结果保留等待，不重新上传或发布。需要本地插件 3.3.10.5；旧版无查询能力时保留快照。调用插件前的本地持久化失败会阻止提交。

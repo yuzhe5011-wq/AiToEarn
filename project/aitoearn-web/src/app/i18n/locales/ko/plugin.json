@@ -167,5 +167,7 @@
     "viewUpdateGuide": "업데이트 가이드 보기",
     "latestDescription": "현재 플러그인은 이미 최신 버전이므로 계속 정상적으로 사용할 수 있습니다.",
     "unavailableDescription": "지금은 플러그인 버전을 읽을 수 없습니다. 나중에 이 창을 다시 열어 확인해 주세요."
-  }
+  },
+  "publishRecoveryWaiting": "페이지 새로고침 후 확장 프로그램 게시 결과 확인 중",
+  "publishRecoveryRejected": "플랫폼에서 제출을 수락하지 않았습니다"
 }

@@ -167,5 +167,7 @@
     "viewUpdateGuide": "Voir le guide de mise à jour",
     "latestDescription": "Votre plugin est déjà à jour et peut continuer à être utilisé normalement.",
     "unavailableDescription": "Impossible de lire la version du plugin pour le moment. Rouvrez cette fenêtre plus tard et réessayez."
-  }
+  },
+  "publishRecoveryWaiting": "Page actualisée. Vérification du résultat original de l’extension",
+  "publishRecoveryRejected": "La plateforme n’a pas accepté cet envoi"
 }

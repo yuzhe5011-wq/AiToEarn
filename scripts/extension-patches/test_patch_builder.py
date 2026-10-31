@@ -9,6 +9,12 @@ spec.loader.exec_module(patch)
 
 
 class VendorIntegrityTests(unittest.TestCase):
+    def test_content_result_bridge_requires_exact_vendor_anchor(self):
+        for source in ['', patch.CONTENT_RECOVERY_ANCHOR * 2]:
+            with self.assertRaisesRegex(ValueError, 'content recovery anchor'):
+                patch.patch_content(source)
+        self.assertEqual(patch.patch_content(patch.CONTENT_RECOVERY_ANCHOR), patch.CONTENT_RECOVERY_REPLACEMENT)
+
     def test_missing_payload_anchor_is_rejected(self):
         with self.assertRaisesRegex(ValueError, 'exact video payload anchor'):
             patch.patch_background('unrelated publisher')

@@ -5,7 +5,7 @@ const { test } = require('node:test')
 const vm = require('node:vm')
 const ts = require('typescript')
 
-function setup(post, get = async () => ({ code: 1 })) {
+function setup(post, get = async () => ({ code: 1 }), storageWrite = async () => {}) {
   const state = { jobs: {}, _hasHydrated: true }
   const user = { userInfo: { id: 'owner' }, token: 'test-session' }
   let tick
@@ -27,6 +27,8 @@ function setup(post, get = async () => ({ code: 1 })) {
         return { getPublishRecordIdFromFlow: (flow, account) => flow?.tasks.find(task => task.accountId === account)?.id }
       if (name.includes('store/user'))
         return { useUserStore: { getState: () => user } }
+      if (name.includes('storage/localStorage'))
+        return { appLocalStorage: { setItem: storageWrite } }
       if (name.includes('createPersistStore')) {
         return { createPersistStore: (initial, methods) => {
           Object.assign(state, initial)
@@ -148,4 +150,70 @@ test('late plugin readiness restores saved records and registers tracking withou
   await methods.refreshAllPlatformAccounts({ syncAccountStore: false })
   assert.equal(recoveryStarted, 1)
   assert.equal(trackingStarted, 1)
+})
+
+test('refresh before plugin completion recovers the preflight snapshot, then saves exactly once', async () => {
+  let persisted
+  const original = setup(async () => { throw new Error('must not save before platform confirmation') }, undefined,
+    async (_key, value) => { persisted = JSON.parse(value) })
+  const pending = job(); delete pending.result
+  await original.api.preparePublishRecord('fixed', pending)
+  assert(persisted.state.jobs.fixed)
+  assert.equal(persisted.state.jobs.fixed.result, undefined)
+  let accepted = false; let posts = 0; let tracked = 0
+  const refreshed = setup(async () => { posts++; return success() })
+  refreshed.state.jobs = persisted.state.jobs
+  refreshed.api.startPublishRecordRecovery(async () => { tracked++ }, async () => accepted ? { success: true, workId: 'original-media' } : undefined)
+  await flush()
+  assert.equal(posts, 0)
+  assert(refreshed.state.jobs.fixed)
+  accepted = true
+  refreshed.tick(); await flush()
+  assert.equal(posts, 1)
+  assert.equal(tracked, 1)
+  assert.equal(Object.keys(refreshed.state.jobs).length, 0)
+  refreshed.tick(); await flush()
+  assert.equal(posts, 1)
+})
+test('preflight persistence failure prevents handing the job to the plugin', async () => {
+  const env = setup(async () => success(), undefined, async () => { throw new Error('storage full') })
+  await assert.rejects(env.api.preparePublishRecord('fixed', job()), /storage full/)
+  assert.equal(Object.keys(env.state.jobs).length, 0)
+})
+test('unknown or unavailable plugin result never creates a record', async () => {
+  let posts = 0
+  const env = setup(async () => { posts++; return success() })
+  const pending = job(); delete pending.result
+  await env.api.preparePublishRecord('fixed', pending)
+  env.api.startPublishRecordRecovery(async () => {}, async () => undefined)
+  await flush(); env.tick(); await flush()
+  assert.equal(posts, 0)
+  assert(env.state.jobs.fixed)
+})
+test('explicit platform rejection restores failure without creating a success record', async () => {
+  let posts = 0; let failures = 0
+  const env = setup(async () => { posts++; return success() })
+  const pending = job(); delete pending.result
+  await env.api.preparePublishRecord('fixed', pending)
+  env.api.startPublishRecordRecovery(async (id, saved) => {
+    assert.equal(id, ''); assert.equal(saved.result.success, false); failures++
+  }, async () => ({ success: false }))
+  await flush()
+  assert.equal(posts, 0); assert.equal(failures, 1)
+  assert.equal(Object.keys(env.state.jobs).length, 0)
+})
+
+test('an original success arriving during a recovery lookup remains recoverable', async () => {
+  let finish; let posts = 0
+  const env = setup(async () => { posts++; return success() })
+  const pending = job(); delete pending.result
+  await env.api.preparePublishRecord('fixed', pending)
+  env.api.startPublishRecordRecovery(async () => {}, () => new Promise(resolve => { finish = resolve }))
+  const original = env.api.queuePublishRecord('fixed', job())
+  finish(undefined)
+  await assert.rejects(original)
+  assert.equal(env.state.jobs.fixed.result.success, true)
+  env.tick(); await flush()
+  assert.equal(posts, 1)
+  assert.equal(Object.keys(env.state.jobs).length, 0)
 })
