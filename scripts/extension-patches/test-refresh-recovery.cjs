@@ -10,22 +10,30 @@ const dir = process.argv[2]
 const read = name => fs.readFileSync(path.join(dir, 'js', name), 'utf8')
 const background = read('background.js')
 const ast = ts.createSourceFile('background.js', background, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS)
-let dispatch
+let dispatch; let runtimeListener
 function visit(node) {
   if (ts.isMethodDeclaration(node) && node.getText(ast).includes('case "HOME_INJECT_LOCAL_WX_PUBLISH_RESULT"')) dispatch = node.getText(ast)
+  if (ts.isCallExpression(node) && node.expression.getText(ast) === 'chrome.runtime.onMessage.addListener'
+      && node.arguments[0]?.getText(ast).includes('wE.handleMessage')) runtimeListener = node.arguments[0].getText(ast)
   ts.forEachChild(node, visit)
 }
 visit(ast)
-assert(dispatch)
+assert(dispatch); assert(runtimeListener)
 const record = { schemaVersion: 1, auditId: 'fixture-audit', startedAt: Date.now(), requestId: 'original-request',
   accountId: 'original-account', requestedScheduledTime: 1900000000000, status: 'accepted', mediaMd5sum: 'original-media' }
+let authorized = true; let reads = 0
 const context = vm.createContext({ chrome: { storage: { local: {
-  get: async key => ({ [key]: [record] }), set: async () => {},
+  get: async key => { reads++; return { [key]: [record] } }, set: async () => {},
 } } } })
 vm.runInContext(read('wx-channels-audit.js'), context)
 // Other vendor actions are deliberately distinct and never invoked.
 vm.runInContext('const [p,m,g,f,w,v,_,b,x,k,S,A,T,I,C,E,R] = Array.from({length:17},(_,i)=>`other-${i}`)', context)
 const handler = vm.runInContext(`({${dispatch}})`, context)
+Object.assign(context, {
+  UE: [], qE: [], IE: { canHandle: () => false }, yE: { canHandle: () => false }, _E: { canHandle: () => false },
+  P: 'other-inject', N: 'other-signature', DE: async () => authorized, wE: handler, a: { t: key => key },
+})
+const router = vm.runInContext(runtimeListener, context)
 const content = read('content_script_home.js')
 const start = content.indexOf('case "LOCAL_WX_SPH_PUBLISH_RESULT":')
 const end = content.indexOf('case E.WX_SPH_START_LINK_POLLING:', start)
@@ -43,7 +51,10 @@ const window = {
 }
 forward = vm.runInNewContext(`async request => {const _=request,r=request.requestId; switch(request.type){${content.slice(start, end)}}}`, {
   s: 'aitoearn-web', n: { REQUEST: 1000 }, window,
-  T: message => handler.handleMessage(message),
+  T: message => new Promise((resolve, reject) => {
+    const routed = router(message, { tab: { id: 123 } }, resolve)
+    if (routed !== true) reject(new Error('The actual runtime listener did not accept the recovery query'))
+  }),
 })
 const exportsObject = {}
 const web = ts.transpileModule(fs.readFileSync(path.join(root, 'project/aitoearn-web/src/store/plugin/wxSphPublishRecovery.ts'), 'utf8'), {
@@ -59,5 +70,10 @@ vm.runInNewContext(web, { exports: exportsObject, window, crypto: { randomUUID: 
   const other = await exportsObject.getWxSphPublicationResult({ ...params, accountId: 'another-account' })
   assert.equal(other.status, 'missing')
   assert.equal(listeners.size, 0)
-  console.log('Web → vendor content → vendor background → persisted audit recovery passed; no platform request.')
+  authorized = false
+  const previousReads = reads
+  const denied = await exportsObject.getWxSphPublicationResult(params)
+  assert.equal(denied, undefined)
+  assert.equal(reads, previousReads)
+  console.log('Web → vendor content → actual runtime listener → vendor background → persisted audit recovery passed; no platform request.')
 })().catch(error => { console.error(error); process.exitCode = 1 })

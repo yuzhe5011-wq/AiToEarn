@@ -2,7 +2,7 @@
 
 ## 中文
 
-这是对官方 AiToEarn Extension 3.3.10 的本地修补工具，不是官方发行版。本地版本为 **3.3.10.5**。
+这是对官方 AiToEarn Extension 3.3.10 的本地修补工具，不是官方发行版。本地版本为 **3.3.10.6**。
 
 - 设置 `objectDesc.shortTitle: [{ shortTitle: title }]`，要求标题为 6–16 个 Unicode 码点。
 - 保留活动的 `questFlag`、`questInfo`。标记为推广但组件信息不完整时阻止提交，要求重新选择。
@@ -17,12 +17,12 @@
 ```sh
 python3 scripts/patch_aitoearn_extension.py \
   --crx .local/plugin-version-check/aitoearn-extension-china.crx \
-  --output .local/extension-staging/3.3.10.5
-node --check .local/extension-staging/3.3.10.5/js/background.js
-node scripts/extension-patches/test-payload.cjs .local/extension-staging/3.3.10.5
+  --output .local/extension-staging/3.3.10.6
+node --check .local/extension-staging/3.3.10.6/js/background.js
+node scripts/extension-patches/test-payload.cjs .local/extension-staging/3.3.10.6
 node scripts/extension-patches/test-web-options.cjs
 node scripts/extension-patches/test-audit.cjs
-node scripts/extension-patches/test-refresh-recovery.cjs .local/extension-staging/3.3.10.5
+node scripts/extension-patches/test-refresh-recovery.cjs .local/extension-staging/3.3.10.6
 python3 -m unittest discover -s scripts/extension-patches -p 'test_*.py' -v
 ```
 
@@ -46,7 +46,7 @@ python3 -m unittest discover -s scripts/extension-patches -p 'test_*.py' -v
 
 ## English
 
-Local version **3.3.10.5** modifies the official AiToEarn Extension 3.3.10; it is not an official release.
+Local version **3.3.10.6** modifies the official AiToEarn Extension 3.3.10; it is not an official release.
 It maps short titles, retains activity questFlag/questInfo and builds the mini-game component plus extReading fields observed in a successful native save request.
 For questFlag=1 and componentType=2, extReading uses empty link/title with urlType=9. Component ID, type and title come from the activity; appearance values are zero.
 Incomplete promotion metadata blocks submission. Ordinary activities do not receive a mini-game component.
@@ -61,7 +61,7 @@ The tool does not upload, publish, schedule or install automatically. Fixtures c
 
 ## 日本語
 
-ローカル版 **3.3.10.5** は公式 AiToEarn Extension 3.3.10 を基にした修正版であり、公式リリースではありません。
+ローカル版 **3.3.10.6** は公式 AiToEarn Extension 3.3.10 を基にした修正版であり、公式リリースではありません。
 短いタイトルとイベントの questFlag / questInfo を保持し、公式画面で保存に成功した構造に合わせてミニゲームの component と extReading を生成します。
 questFlag=1・componentType=2 の場合、extReading は空の link/title と urlType=9 を使用します。component の ID・種類・名前はイベントから取得し、表示設定はゼロです。
 不完全なプロモーション情報は送信を停止します。通常のイベントにはゲームコンポーネントを追加しません。

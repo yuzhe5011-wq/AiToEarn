@@ -16,7 +16,7 @@ import zipfile
 
 SOURCE_SHA256 = 'aa6f51104fa077aa9902b164a4caf9113b0e5451a39ca2b327477694d552f2f5'
 SOURCE_VERSION = '3.3.10'
-LOCAL_VERSION = '3.3.10.5'
+LOCAL_VERSION = '3.3.10.6'
 EXTENSION_ID = 'hnmocdhmnfgcjnedmdgfefcobideaeja'
 ANCHOR = 'objectDesc:{mpTitle:"",description:t.filter(Boolean).join(" ")'
 REPLACEMENT = ('objectDesc:{mpTitle:"",'
@@ -52,7 +52,9 @@ AUDIT_PATCHES = [(CREATE_ANCHOR, CREATE_REPLACEMENT, 'audit create'),
                  ('D=[p,m,g,f,b,k,S,A,T,I,C,E]',
                   'D=[p,m,g,f,b,k,S,A,T,I,C,E,"HOME_INJECT_LOCAL_WX_PUBLISH_RESULT"]', 'recovery permission'),
                  ('case T:return await this.handleWxSphStartLinkPolling(n);',
-                  'case "HOME_INJECT_LOCAL_WX_PUBLISH_RESULT":return await globalThis.__aitoearnLocalWxAudit.lookup(n);case T:return await this.handleWxSphStartLinkPolling(n);', 'recovery dispatch')]
+                  'case "HOME_INJECT_LOCAL_WX_PUBLISH_RESULT":return await globalThis.__aitoearnLocalWxAudit.lookup(n);case T:return await this.handleWxSphStartLinkPolling(n);', 'recovery dispatch'),
+                 ('(e.action===p||e.action===m||',
+                  '(e.action==="HOME_INJECT_LOCAL_WX_PUBLISH_RESULT"||e.action===p||e.action===m||', 'recovery outer router')]
 
 
 CONTENT_RECOVERY_ANCHOR = 'case E.WX_SPH_START_LINK_POLLING:'
@@ -166,7 +168,7 @@ def build(crx_path: Path, output: Path) -> dict:
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_bytes(archive.read(entry))
     manifest['version'] = LOCAL_VERSION
-    manifest['version_name'] = SOURCE_VERSION + ' local mini-game recovery patch 5'
+    manifest['version_name'] = SOURCE_VERSION + ' local mini-game recovery patch 6'
     manifest['name'] = 'AiToEarn Extension (Local Short Title Patch)'
     manifest['key'] = key
     manifest.pop('update_url', None)
