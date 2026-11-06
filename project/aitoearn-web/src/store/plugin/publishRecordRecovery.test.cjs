@@ -217,3 +217,101 @@ test('an original success arriving during a recovery lookup remains recoverable'
   assert.equal(posts, 1)
   assert.equal(Object.keys(env.state.jobs).length, 0)
 })
+
+const pendingDraft = (overrides = {}) => ({
+  userId: 'owner', accountId: 'account',
+  flow: { flowId: 'fixed', context: { materialId: 'draft' }, items: [{ platform: 'wxSph' }] }, ...overrides,
+})
+test('in-flight drafts remain occupied after refresh and are scoped by owner and platform', async () => {
+  const original = setup(async () => success())
+  await original.api.preparePublishRecord('fixed', pendingDraft())
+  const refreshed = setup(async () => success())
+  refreshed.state.jobs = JSON.parse(JSON.stringify(original.state.jobs))
+  assert.deepEqual(Array.from(refreshed.api.getPendingMaterialIds(refreshed.state.jobs, 'owner', 'wxSph')), ['draft'])
+  assert.equal(refreshed.api.getPendingMaterialIds(refreshed.state.jobs, 'another-owner', 'wxSph').length, 0)
+  assert.equal(refreshed.api.getPendingMaterialIds(refreshed.state.jobs, 'owner', 'xhs').length, 0)
+})
+test('an explicitly rejected submission releases its draft', async () => {
+  const env = setup(async () => { throw new Error('must not save rejected result') })
+  await env.api.preparePublishRecord('fixed', pendingDraft())
+  env.api.startPublishRecordRecovery(async () => {}, async () => ({ success: false }))
+  await flush()
+  assert.equal(env.api.getPendingMaterialIds(env.state.jobs, 'owner', 'wxSph').length, 0)
+})
+test('accepted drafts stay hidden while record saving or list handoff is incomplete', async () => {
+  let finishRefresh
+  const env = setup(async () => success())
+  env.api.startPublishRecordRecovery(async () => new Promise(resolve => { finishRefresh = resolve }))
+  const saving = env.api.queuePublishRecord('fixed', pendingDraft({ result: { success: true } }))
+  await flush()
+  assert.equal(env.api.getPendingMaterialIds(env.state.jobs, 'owner', 'wxSph')[0], 'draft')
+  finishRefresh()
+  await saving
+  assert.equal(env.api.getPendingMaterialIds(env.state.jobs, 'owner', 'wxSph').length, 0)
+})
+
+test('checks readiness before occupying a draft, then persists before platform dispatch', async () => {
+  const source = ts.createSourceFile('store.ts', fs.readFileSync(path.join(__dirname, 'store.ts'), 'utf8'), ts.ScriptTarget.Latest, true)
+  let method
+  function visit(node) {
+    if (ts.isMethodDeclaration(node) && node.name?.getText(source) === 'publish') method = node.getText(source)
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  const code = ts.transpileModule(`({${method}})`, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText
+  const state = { status: 'offline', publishingPlatforms: new Set(), platformProgress: new Map() }
+  const order = []
+  const methods = vm.runInNewContext(code, {
+    get: () => state, set: partial => Object.assign(state, partial),
+    isPlatformEnabledSync: () => true, parseTopicString: text => ({ topics: [], cleanedString: text }),
+    getPublishKey: () => 'account', Status: { READY: 'ready' }, ERROR_MESSAGES: { PLUGIN_NOT_READY: 'not ready' },
+    window: { AIToEarnPlugin: { publish: async () => { order.push('dispatch'); return { success: true } } } },
+  })
+  const input = () => ({ platform: 'wxSph', accountId: 'account', topics: [] })
+  await assert.rejects(methods.publish(input(), undefined, async () => { order.push('persist') }), /not ready/)
+  assert.equal(order.length, 0)
+  state.status = 'ready'
+  await methods.publish(input(), undefined, async () => { order.push('persist') })
+  assert.deepEqual(order, ['persist', 'dispatch'])
+})
+
+function loadHandoff(state) {
+  const source = ts.createSourceFile('store.ts', fs.readFileSync(path.join(__dirname, 'store.ts'), 'utf8'), ts.ScriptTarget.Latest, true)
+  let callback
+  function visit(node) {
+    if (ts.isCallExpression(node) && node.expression.getText(source) === 'startPublishRecordRecovery') callback = node.arguments[0].getText(source)
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  let completed = 0
+  const code = ts.transpileModule(`(${callback})`, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText
+  const run = vm.runInNewContext(code, {
+    usePlanDetailStore: { getState: () => state }, PlatType: { WxSph: 'wxSph' },
+    methods: { updatePlatformTaskByRequestId: () => { completed++ } },
+    PlatformTaskStatus: { COMPLETED: 'completed' }, directTrans: () => 'complete',
+    useCalendarTiming: { getState: () => ({ refreshCurrentPubRecords: async () => {} }) },
+  })
+  return { run, completed: () => completed }
+}
+const handoffJob = () => ({ ...pendingDraft({ result: { success: true, shareLink: 'existing-link' } }), flow: {
+  flowId: 'plugin-fixed', context: { materialId: 'draft', materialGroupId: 'group' }, items: [{ platform: 'wxSph' }],
+} })
+test('a completed task does not refresh a different draft group', async () => {
+  let refreshes = 0
+  const env = loadHandoff({ currentPlan: { id: 'another-group' }, materialsFilter: { excludeSubmittedAccountType: 'wxSph' },
+    fetchMaterials: async () => { refreshes++; return true } })
+  await env.run('record', handoffJob())
+  assert.equal(refreshes, 0); assert.equal(env.completed(), 1)
+})
+test('closing or switching the draft group while refreshing does not block completion', async () => {
+  const state = { currentPlan: { id: 'group' }, materialsFilter: { excludeSubmittedAccountType: 'wxSph' },
+    fetchMaterials: async () => { state.currentPlan = { id: 'another-group' }; return undefined } }
+  const env = loadHandoff(state)
+  await env.run('record', handoffJob())
+  assert.equal(env.completed(), 1)
+})
+test('a failed refresh of the still-visible filtered group retains the recovery task', async () => {
+  const env = loadHandoff({ currentPlan: { id: 'group' }, materialsFilter: { excludeSubmittedAccountType: 'wxSph' }, fetchMaterials: async () => false })
+  await assert.rejects(env.run('record', handoffJob()), /Waiting for the submitted draft list/)
+  assert.equal(env.completed(), 0)
+})

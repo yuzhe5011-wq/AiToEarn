@@ -218,6 +218,7 @@ function getInitialState() {
 
 export const usePlanDetailStore = create(
   combine(getInitialState(), (set, get) => {
+    let materialRequestSequence = 0
     const methods = {
       // ==================== 计划详情 ====================
 
@@ -246,12 +247,15 @@ export const usePlanDetailStore = create(
        * 获取素材列表
        */
       fetchMaterials: async (planId: string, page: number = 1) => {
+        const requestSequence = ++materialRequestSequence
         set({ materialsLoading: true })
         const { materialsPagination, materialsFilter } = get()
         try {
           const res = await apiGetMaterialList(planId, page, materialsPagination.pageSize, materialsFilter)
-          if (get().materialsFilter !== materialsFilter || (get().initializedPlanId && get().initializedPlanId !== planId))
+          if (requestSequence !== materialRequestSequence || get().materialsFilter !== materialsFilter || (get().initializedPlanId && get().initializedPlanId !== planId))
             return
+          if (res?.code !== 0 || !Array.isArray(res.data?.list) || typeof res.data?.total !== 'number')
+            return false
           const resData = res?.data as { list?: any[], total?: number } | undefined
           const list = (resData?.list || []) as PromotionMaterial[]
           const total = resData?.total || 0
@@ -266,12 +270,13 @@ export const usePlanDetailStore = create(
               hasMore: list.length === materialsPagination.pageSize,
             },
           })
+          return true
         }
         catch (error) {
-          // 错误由调用方处理
+          return false
         }
         finally {
-          if (get().materialsFilter === materialsFilter)
+          if (requestSequence === materialRequestSequence && get().materialsFilter === materialsFilter)
             set({ materialsLoading: false })
         }
       },
@@ -284,11 +289,12 @@ export const usePlanDetailStore = create(
         if (materialsLoading || !materialsPagination.hasMore)
           return
 
+        const requestSequence = materialRequestSequence
         set({ materialsLoading: true })
         try {
           const nextPage = materialsPagination.current + 1
           const res = await apiGetMaterialList(planId, nextPage, materialsPagination.pageSize, materialsFilter)
-          if (get().materialsFilter !== materialsFilter || (get().initializedPlanId && get().initializedPlanId !== planId))
+          if (requestSequence !== materialRequestSequence || get().materialsFilter !== materialsFilter || (get().initializedPlanId && get().initializedPlanId !== planId))
             return
           const resData = res?.data as { list?: any[], total?: number } | undefined
           const list = (resData?.list || []) as PromotionMaterial[]
@@ -308,7 +314,7 @@ export const usePlanDetailStore = create(
           // 错误由调用方处理
         }
         finally {
-          if (get().materialsFilter === materialsFilter)
+          if (requestSequence === materialRequestSequence && get().materialsFilter === materialsFilter)
             set({ materialsLoading: false })
         }
       },

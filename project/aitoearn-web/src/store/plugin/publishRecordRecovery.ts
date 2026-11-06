@@ -17,7 +17,7 @@ export interface PendingPublishRecord {
   result?: PublishResult
 }
 
-const usePendingPublishRecords = createPersistStore(
+export const usePendingPublishRecords = createPersistStore(
   { jobs: {} as Record<string, PendingPublishRecord> },
   (set, get) => ({
     save(id: string, job: PendingPublishRecord) {
@@ -32,6 +32,16 @@ const usePendingPublishRecords = createPersistStore(
   { name: 'plugin-publish-record-recovery' },
   'localStorage',
 )
+
+/** Only the current owner's unresolved or accepted submissions occupy a draft. */
+export function getPendingMaterialIds(jobs: Record<string, PendingPublishRecord>, userId: string | undefined, platform: string) {
+  if (!userId)
+    return []
+  return [...new Set(Object.values(jobs)
+    .filter(job => job.userId === userId && job.result?.success !== false && job.flow.items.some(item => item.platform === platform))
+    .map(job => job.flow.context?.materialId)
+    .filter((id): id is string => !!id))]
+}
 
 const inFlight = new Map<string, Promise<string>>()
 let retryTimer: ReturnType<typeof setInterval> | undefined

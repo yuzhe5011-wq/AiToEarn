@@ -30,6 +30,7 @@ import { directTrans } from '@/app/i18n/client'
 import { buildChannelPublishFlowParams, isPublishTitleSupported } from '@/components/PublishDialog/PublishDialog.util'
 import { PluginVersionLast } from '@/constant'
 import { useAccountStore } from '@/store/account'
+import { usePlanDetailStore } from '@/store/draft-box/planDetailStore'
 import { isPlatformEnabledSync } from '@/store/platformMetadata'
 import { useUserStore } from '@/store/user'
 import { parseTopicString } from '@/utils/common'
@@ -681,6 +682,20 @@ export const usePluginStore = create(
             if (!started)
               throw new Error('Waiting to resume result tracking')
           }
+          const draftState = usePlanDetailStore.getState()
+          const materialId = job.flow.context?.materialId
+          const groupId = draftState.currentPlan?.id
+          const isRelatedGroup = groupId && (job.flow.context?.materialGroupId === groupId
+            || (!job.flow.context?.materialGroupId && draftState.materials.some(material => material.id === materialId)))
+          if (draftState.materialsFilter.excludeSubmittedAccountType === PlatType.WxSph && groupId && isRelatedGroup
+            && materialId && job.flow.items.some(item => item.platform === PlatType.WxSph)) {
+            const refreshed = await draftState.fetchMaterials(groupId, 1)
+            const latestDraftState = usePlanDetailStore.getState()
+            if (!refreshed && latestDraftState.currentPlan?.id === groupId
+              && latestDraftState.materialsFilter.excludeSubmittedAccountType === PlatType.WxSph) {
+              throw new Error('Waiting for the submitted draft list to refresh')
+            }
+          }
           methods.updatePlatformTaskByRequestId(requestId || '', {
             status: PlatformTaskStatus.COMPLETED,
             publishRecordId: recordId,
@@ -847,7 +862,7 @@ export const usePluginStore = create(
       },
 
       /** 发布内容到指定平台 */
-      async publish(params: PublishParams, onProgress?: ProgressCallback) {
+      async publish(params: PublishParams, onProgress?: ProgressCallback, beforeDispatch?: () => Promise<void>) {
         const { status, publishingPlatforms, platformProgress } = get()
         const platform = params.platform
 
@@ -893,6 +908,7 @@ export const usePluginStore = create(
         })
 
         try {
+          await beforeDispatch?.()
           const result = await window.AIToEarnPlugin!.publish(params, (progress) => {
             // 更新该账号的进度
             const updatedProgress = new Map(get().platformProgress)
@@ -1272,12 +1288,6 @@ export const usePluginStore = create(
               if (!preparedFlow)
                 throw new Error('Missing publication record content')
               preparedFlow.flowId = `plugin-${requestId}`
-              await preparePublishRecord(preparedFlow.flowId, {
-                userId: recordOwnerId,
-                accountId,
-                scheduledTime: publishTime ? dayjs(publishTime).valueOf() : undefined,
-                flow: preparedFlow,
-              })
             }
 
             // 执行发布，通过 requestId 匹配进度
@@ -1294,6 +1304,15 @@ export const usePluginStore = create(
                   accountId,
                   platform,
                   requestId,
+                })
+              }
+            }, async () => {
+              if (preparedFlow?.flowId) {
+                await preparePublishRecord(preparedFlow.flowId, {
+                  userId: recordOwnerId,
+                  accountId,
+                  scheduledTime: publishTime ? dayjs(publishTime).valueOf() : undefined,
+                  flow: preparedFlow,
                 })
               }
             })

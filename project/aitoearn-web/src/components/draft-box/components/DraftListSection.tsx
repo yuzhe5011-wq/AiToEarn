@@ -27,6 +27,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { usePlanDetailStore } from '@/store/draft-box/planDetailStore'
 import { getPlatformInfoSync } from '@/store/platformMetadata'
 import { usePluginStore } from '@/store/plugin'
+import { getPendingMaterialIds, usePendingPublishRecords } from '@/store/plugin/publishRecordRecovery'
 import { useUserStore } from '@/store/user'
 import { cn } from '@/utils/className'
 import { useContainerMasonryColumns } from '../hooks/useContainerMasonryColumns'
@@ -268,6 +269,7 @@ export const DraftListSection = memo(({
   const userId = useUserStore(state => state.userInfo?.id)
   const filterHydrated = usePublishSubmissionFilterStore(state => state._hasHydrated)
   const savedUnsubmitted = usePublishSubmissionFilterStore(state => userId ? state.wxSphUnsubmittedByUser[userId] ?? false : false)
+  const pendingMaterialIds = usePendingPublishRecords(useShallow(state => getPendingMaterialIds(state.jobs, userId, PlatType.WxSph)))
   const onlyUnsubmitted = enablePublishDrag && filterHydrated && savedUnsubmitted
   useEffect(() => {
     if (!enablePublishDrag || !filterHydrated || !userId)
@@ -344,6 +346,14 @@ export const DraftListSection = memo(({
     })),
   )
 
+  const visibleMaterials = useMemo(() => {
+    if (!onlyUnsubmitted)
+      return materials
+    const pending = new Set(pendingMaterialIds)
+    return materials.filter(material => !pending.has(material.id))
+  }, [materials, onlyUnsubmitted, pendingMaterialIds])
+  const visibleDraftTotal = Math.max(0, materialsPagination.total - (materials.length - visibleMaterials.length))
+
   const { draftTotal, videoTotal, imgTotal } = useMediaTabStore(
     useShallow(state => ({
       draftTotal: state.all.draftTotal,
@@ -415,7 +425,7 @@ export const DraftListSection = memo(({
     return () => {
       observer.disconnect()
     }
-  }, [loadMoreElement, materialsPagination.hasMore, materialsLoading, materialGroupId, loadMoreMaterials])
+  }, [loadMoreElement, materialsPagination.hasMore, materialsLoading, materialGroupId, loadMoreMaterials, visibleMaterials.length])
 
   // 根据 activeTab 获取标题
   const getHeaderTitle = () => {
@@ -436,13 +446,13 @@ export const DraftListSection = memo(({
       case 'all':
         return allTotal
       case 'drafts':
-        return materialsPagination.total + visibleDraftGenerationTasks.length
+        return visibleDraftTotal + visibleDraftGenerationTasks.length
       case 'video':
         return videoTotal + visibleVideoGenerationTasks.length
       case 'img':
         return imgTotal + visibleImageGenerationTasks.length
       default:
-        return materialsPagination.total + visibleDraftGenerationTasks.length
+        return visibleDraftTotal + visibleDraftGenerationTasks.length
     }
   }
 
@@ -479,7 +489,7 @@ export const DraftListSection = memo(({
           ))}
 
           {/* 草稿数据 */}
-          {materials.map(material => (
+          {visibleMaterials.map(material => (
             <DraftCard
               key={material.id}
               material={material}
@@ -553,9 +563,9 @@ export const DraftListSection = memo(({
       {hasDraftsTab && (
         <TabsTrigger value="drafts" className={useContainerResponsive ? 'min-w-0 cursor-pointer px-2 text-xs @min-[640px]:px-3 @min-[640px]:text-sm' : 'cursor-pointer min-w-0 px-2 text-xs sm:px-3 sm:text-sm'}>
           {tMaterial('mediaManagement.drafts', '草稿')}
-          {materialsPagination.total > 0 && (
+          {visibleDraftTotal > 0 && (
             <Badge variant="secondary" className={tabCountBadgeClassName}>
-              {materialsPagination.total}
+              {visibleDraftTotal}
             </Badge>
           )}
         </TabsTrigger>
