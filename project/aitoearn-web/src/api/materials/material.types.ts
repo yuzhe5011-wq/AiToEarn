@@ -277,6 +277,7 @@ export interface TransferMediaParams {
  * MaterialListFilters 类型。
  */
 export interface MaterialListFilters {
+  excludeSubmittedAccountType?: PlatType
   title?: string
   useCount?: number
 }
@@ -409,6 +410,7 @@ export interface CreateMaterialParams {
  * 素材列表查询参数。
  */
 export interface MaterialListQueryParams {
+  excludeSubmittedAccountType?: PlatType
   groupId: string
   title?: string
   useCount?: number

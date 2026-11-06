@@ -58,3 +58,5 @@ import { confirm } from '@/utils/ui/confirm'
 import { toast } from '@/utils/ui/toast'
 import http, { request } from '@/utils/request'
 ```
+
+`media.ts` 的 `getVideoMeta` 支持本地 File 或远程视频 URL；只读取元信息，不截帧，支持超时清理。

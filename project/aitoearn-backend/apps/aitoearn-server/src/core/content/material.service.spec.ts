@@ -25,6 +25,7 @@ function createService() {
   const publishRecordRepository = {
     countByMaterialsGroupedByAccountType: vi.fn().mockResolvedValue([]),
     listScheduledByMaterials: vi.fn().mockResolvedValue([]),
+    listMaterialIdsByUserIdAndAccountTypeAndStatuses: vi.fn().mockResolvedValue([]),
   }
   return {
     service: new MaterialService(materialRepository as never, {} as never, {} as never, {} as never, publishRecordRepository as never),
@@ -112,5 +113,27 @@ describe('material successful publication counts', () => {
     materialRepository.getInfo.mockResolvedValue(null)
     expect(await service.getInfo('missing')).toBeNull()
     expect(publishRecordRepository.countByMaterialsGroupedByAccountType).not.toHaveBeenCalled()
+  })
+})
+
+describe('unsubmitted material filter', () => {
+  it('excludes platform-accepted material IDs before pagination and preserves totals', async () => {
+    const { service, materialRepository, publishRecordRepository } = createService()
+    publishRecordRepository.listMaterialIdsByUserIdAndAccountTypeAndStatuses.mockResolvedValue(['accepted-scheduled', 'published'])
+    materialRepository.getList.mockResolvedValue({ total: 1, list: [{ id: 'unused', userId: 'owner' }] })
+    const result = await service.getList({ pageNo: 1, pageSize: 12 } as never, {
+      userId: 'owner', groupId: 'group', excludeSubmittedAccountType: AccountType.WeChatChannels,
+    })
+    expect(publishRecordRepository.listMaterialIdsByUserIdAndAccountTypeAndStatuses).toHaveBeenCalledWith('owner', AccountType.WeChatChannels)
+    expect(materialRepository.getList).toHaveBeenCalledWith({ userId: 'owner', groupId: 'group', excludedIds: ['accepted-scheduled', 'published'] }, { pageNo: 1, pageSize: 12 })
+    expect(result.total).toBe(1)
+    expect(result.list[0].id).toBe('unused')
+  })
+  it('leaves ordinary material lists unchanged', async () => {
+    const { service, materialRepository, publishRecordRepository } = createService()
+    materialRepository.getList.mockResolvedValue({ total: 0, list: [] })
+    await service.getList({ pageNo: 1, pageSize: 12 } as never, { userId: 'owner' })
+    expect(publishRecordRepository.listMaterialIdsByUserIdAndAccountTypeAndStatuses).not.toHaveBeenCalled()
+    expect(materialRepository.getList).toHaveBeenCalledWith({ userId: 'owner' }, { pageNo: 1, pageSize: 12 })
   })
 })

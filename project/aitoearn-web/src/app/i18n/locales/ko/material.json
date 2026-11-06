@@ -100,7 +100,9 @@
     "createDraftTaskMore": "추가로 {{count}}개 작업이 더 실행 중입니다",
     "createDraftTaskDoNotClose": "작업은 현재 페이지에서 계속 실행됩니다. 초안함 작업은 계속할 수 있지만, 이 페이지를 닫거나 새로고침하지 마세요.",
     "createDraftTaskCompactTitle": "{{count}}개 초안 생성 작업 실행 중",
-    "createDraftTaskCompactDesc": "눌러서 자세히 보고 이 페이지를 계속 열어 두세요"
+    "createDraftTaskCompactDesc": "눌러서 자세히 보고 이 페이지를 계속 열어 두세요",
+    "onlyUnsubmittedWxSph": "위챗 채널에 제출하지 않은 초안만 표시",
+    "unsubmitted": "미제출"
   },
   "aiGenerate": {
     "title": "AI 도구",

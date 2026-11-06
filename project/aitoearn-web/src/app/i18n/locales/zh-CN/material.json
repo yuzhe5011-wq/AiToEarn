@@ -100,7 +100,9 @@
     "createDraftTaskMore": "还有 {{count}} 个任务正在执行",
     "createDraftTaskDoNotClose": "任务会持续在当前页面执行。你可以继续操作草稿箱，但请不要关闭或刷新此页面。",
     "createDraftTaskCompactTitle": "{{count}} 个草稿正在生成",
-    "createDraftTaskCompactDesc": "点击展开查看详情，请保持此页面开启"
+    "createDraftTaskCompactDesc": "点击展开查看详情，请保持此页面开启",
+    "onlyUnsubmittedWxSph": "仅显示未提交到视频号的草稿",
+    "unsubmitted": "未提交"
   },
   "aiGenerate": {
     "title": "AI生成",

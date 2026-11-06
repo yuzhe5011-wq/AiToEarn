@@ -54,6 +54,15 @@ export class PublishRecordRepository extends BaseRepository<PublishRecord> {
     return res
   }
 
+  async listMaterialIdsByUserIdAndAccountTypeAndStatuses(userId: string, accountType: AccountType) {
+    return this.publishRecordModel.distinct('materialId', {
+      userId,
+      accountType,
+      materialId: { $exists: true, $ne: null },
+      status: { $in: [PublishStatus.Published, PublishStatus.PlatformScheduled] },
+    }).exec()
+  }
+
   async listScheduledByMaterials(materials: { materialId: string, userId: string }[]) {
     if (materials.length === 0)
       return []

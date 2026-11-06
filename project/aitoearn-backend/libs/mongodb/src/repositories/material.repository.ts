@@ -139,6 +139,7 @@ export class MaterialRepository extends BaseRepository<Material> {
       groupId?: string
       status?: MaterialStatus
       ids?: string[]
+      excludedIds?: string[]
       useCount?: number
     },
     pageInfo: {
@@ -157,6 +158,7 @@ export class MaterialRepository extends BaseRepository<Material> {
       ...(inFilter.groupId && { groupId: inFilter.groupId }),
       ...(inFilter.status !== undefined && { status: inFilter.status }),
       ...(inFilter.ids && { _id: { $in: [inFilter.ids] } }),
+      ...(inFilter.excludedIds?.length && { $and: [{ _id: { $nin: inFilter.excludedIds } }] }),
       ...(inFilter.useCount !== undefined && { useCount: { $gte: inFilter.useCount } }),
     }
 

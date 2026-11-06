@@ -100,7 +100,9 @@
     "createDraftTaskMore": "{{count}} more task(s) are still running",
     "createDraftTaskDoNotClose": "The task keeps running on this page. You can continue working in the draft box, but do not close or refresh this page.",
     "createDraftTaskCompactTitle": "{{count}} draft task(s) running",
-    "createDraftTaskCompactDesc": "Tap to expand and keep this page open"
+    "createDraftTaskCompactDesc": "Tap to expand and keep this page open",
+    "onlyUnsubmittedWxSph": "Only show drafts not submitted to WeChat Channels",
+    "unsubmitted": "Not submitted"
   },
   "aiGenerate": {
     "title": "AI Tools",

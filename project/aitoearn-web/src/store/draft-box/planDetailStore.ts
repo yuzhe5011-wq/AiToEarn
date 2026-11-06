@@ -1,4 +1,4 @@
-﻿import type { DraftGenerationRequest, DraftGenerationTask, ImageModelType, ImageTextDraftType, VideoDraftType } from '@/api/ai/ai.types'
+import type { DraftGenerationRequest, DraftGenerationTask, ImageModelType, ImageTextDraftType, VideoDraftType } from '@/api/ai/ai.types'
 import type { MaterialFilterDeleteParams, MaterialListFilters, MaterialPagination, PlanStatistics, PromotionMaterial, PromotionPlan, PublishRecord } from '@/api/materials/material.types'
 import type { PlatType } from '@/app/config/platConfig'
 
@@ -247,9 +247,11 @@ export const usePlanDetailStore = create(
        */
       fetchMaterials: async (planId: string, page: number = 1) => {
         set({ materialsLoading: true })
+        const { materialsPagination, materialsFilter } = get()
         try {
-          const { materialsPagination, materialsFilter } = get()
           const res = await apiGetMaterialList(planId, page, materialsPagination.pageSize, materialsFilter)
+          if (get().materialsFilter !== materialsFilter || (get().initializedPlanId && get().initializedPlanId !== planId))
+            return
           const resData = res?.data as { list?: any[], total?: number } | undefined
           const list = (resData?.list || []) as PromotionMaterial[]
           const total = resData?.total || 0
@@ -269,7 +271,8 @@ export const usePlanDetailStore = create(
           // 错误由调用方处理
         }
         finally {
-          set({ materialsLoading: false })
+          if (get().materialsFilter === materialsFilter)
+            set({ materialsLoading: false })
         }
       },
 
@@ -285,6 +288,8 @@ export const usePlanDetailStore = create(
         try {
           const nextPage = materialsPagination.current + 1
           const res = await apiGetMaterialList(planId, nextPage, materialsPagination.pageSize, materialsFilter)
+          if (get().materialsFilter !== materialsFilter || (get().initializedPlanId && get().initializedPlanId !== planId))
+            return
           const resData = res?.data as { list?: any[], total?: number } | undefined
           const list = (resData?.list || []) as PromotionMaterial[]
           const total = resData?.total || 0
@@ -303,7 +308,8 @@ export const usePlanDetailStore = create(
           // 错误由调用方处理
         }
         finally {
-          set({ materialsLoading: false })
+          if (get().materialsFilter === materialsFilter)
+            set({ materialsLoading: false })
         }
       },
 
@@ -862,6 +868,8 @@ export const usePlanDetailStore = create(
        * 用于 mediaTabStore.fetchAllList 初始加载后同步草稿到 planDetailStore
        */
       setMaterialsFromExternal: (list: PromotionMaterial[], total: number, pageSize: number) => {
+        if (get().materialsFilter.excludeSubmittedAccountType)
+          return
         set({
           materials: list,
           materialsInitialized: true,
@@ -880,6 +888,8 @@ export const usePlanDetailStore = create(
        * 用于 mediaTabStore.silentRefreshAll 后同步新增草稿
        */
       syncMaterialsFromFresh: (freshList: PromotionMaterial[], total: number) => {
+        if (get().materialsFilter.excludeSubmittedAccountType)
+          return
         const { materials, materialsPagination } = get()
         const existingIds = new Set(materials.map(m => m.id))
         const newItems = freshList.filter(item => !existingIds.has(item.id))
@@ -900,6 +910,8 @@ export const usePlanDetailStore = create(
        * 用于 mediaTabStore.loadMoreAll 加载更多草稿后同步
        */
       appendMaterials: (list: PromotionMaterial[], total: number) => {
+        if (get().materialsFilter.excludeSubmittedAccountType)
+          return
         const { materials, materialsPagination } = get()
         // 去重后追加
         const existingIds = new Set(materials.map(m => m.id))

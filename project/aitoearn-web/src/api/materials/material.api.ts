@@ -327,7 +327,7 @@ export function apiFilterDeleteMaterials(data: MaterialFilterDeleteParams) {
  * 分页获取草稿列表，支持筛选条件。
  */
 export async function apiGetMaterialList(groupId: string, pageNo: number, pageSize: number, filters?: MaterialListFilters) {
-  const params: MaterialListQueryParams = { groupId }
+  const params: MaterialListQueryParams = { groupId, excludeSubmittedAccountType: filters?.excludeSubmittedAccountType }
   if (filters?.title)
     params.title = filters.title
   if (filters?.useCount !== undefined)

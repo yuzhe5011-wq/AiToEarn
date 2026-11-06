@@ -100,7 +100,9 @@
     "createDraftTaskMore": "{{count}} autre(s) tâche(s) sont encore en cours",
     "createDraftTaskDoNotClose": "La tâche continue de s'exécuter sur cette page. Vous pouvez continuer à travailler dans la boîte de brouillons, mais ne fermez pas et n'actualisez pas cette page.",
     "createDraftTaskCompactTitle": "{{count}} tâche(s) de brouillon en cours",
-    "createDraftTaskCompactDesc": "Touchez pour développer et gardez cette page ouverte"
+    "createDraftTaskCompactDesc": "Touchez pour développer et gardez cette page ouverte",
+    "onlyUnsubmittedWxSph": "Afficher uniquement les brouillons non envoyés à WeChat Channels",
+    "unsubmitted": "Non envoyé"
   },
   "aiGenerate": {
     "title": "Outils IA",

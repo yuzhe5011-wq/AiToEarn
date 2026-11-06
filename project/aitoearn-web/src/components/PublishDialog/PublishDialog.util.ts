@@ -13,6 +13,7 @@ import { PlatType } from '@/app/config/platConfig'
 import { PubType } from '@/app/config/publishConfig'
 import { getPlatformInfoSync } from '@/store/platformMetadata'
 import { generateUUID, getFilePathName, parseTopicString } from '@/utils/common'
+import { getVideoMeta } from '@/utils/media'
 import { getOssProxyPath, getOssUrl } from '@/utils/oss'
 
 type AccountIdentityFields = Pick<SocialAccount, 'id' | 'type' | 'uid'>
@@ -408,16 +409,37 @@ export async function createPublishVideoFromMedia(media: MediaItem): Promise<IVi
   }
 }
 
+// Share metadata reads between repeated opens without retaining video/blob objects.
+const draftVideoMetadata = new Map<string, { expires: number, value: ReturnType<typeof getVideoMeta> }>()
+function getDraftVideoMetadata(url: string) {
+  const cached = draftVideoMetadata.get(url)
+  if (cached && cached.expires > Date.now())
+    return cached.value
+  const value = getVideoMeta(getOssUrl(url)).catch((error) => {
+    if (draftVideoMetadata.get(url)?.value === value)
+      draftVideoMetadata.delete(url)
+    throw error
+  })
+  if (draftVideoMetadata.size >= 32)
+    draftVideoMetadata.delete(draftVideoMetadata.keys().next().value!)
+  draftVideoMetadata.set(url, { expires: Date.now() + 5 * 60_000, value })
+  return value
+}
+
 async function createPublishVideoFromDraft(material: PromotionMaterial, videoUrl: string): Promise<IVideoFile> {
+  const coverUrl = material.coverUrl || material.mediaList.find(media => media.type === 'video' && media.url === videoUrl)?.thumbUrl
   try {
-    const videoInfo = await VideoGrabFrame(videoUrl, 0)
-    const cover = material.coverUrl
-      ? createPublishImageFromUrl({
-          url: material.coverUrl,
-          width: videoInfo.width,
-          height: videoInfo.height,
-        })
-      : videoInfo.cover
+    let videoInfo: { width: number, height: number, duration: number }
+    let cover: IImgFile
+    if (coverUrl) {
+      videoInfo = await getDraftVideoMetadata(videoUrl)
+      cover = createPublishImageFromUrl({ url: coverUrl, width: videoInfo.width, height: videoInfo.height })
+    }
+    else {
+      const frame = await VideoGrabFrame(videoUrl, 0)
+      videoInfo = frame
+      cover = frame.cover
+    }
 
     return {
       size: 0,
@@ -427,7 +449,7 @@ async function createPublishVideoFromDraft(material: PromotionMaterial, videoUrl
       filename: '',
       width: videoInfo.width,
       height: videoInfo.height,
-      duration: videoInfo.duration,
+      duration: Math.floor(videoInfo.duration),
       cover,
     }
   }
@@ -442,7 +464,7 @@ async function createPublishVideoFromDraft(material: PromotionMaterial, videoUrl
       height: 0,
       duration: 0,
       cover: createPublishImageFromUrl({
-        url: material.coverUrl || '',
+        url: coverUrl || '',
       }),
     }
   }

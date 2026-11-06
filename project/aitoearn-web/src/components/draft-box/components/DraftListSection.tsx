@@ -10,11 +10,11 @@
 'use client'
 
 import type { PromotionMaterial } from '@/api/materials/material.types'
-import type { PlatType } from '@/app/config/platConfig'
 import { ArrowRightLeft, Check, ListChecks, Plus, Trash2 } from 'lucide-react'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import Masonry from 'react-masonry-css'
 import { useShallow } from 'zustand/react/shallow'
+import { AccountPlatInfoMap, PlatType } from '@/app/config/platConfig'
 import { useTransClient } from '@/app/i18n/client'
 import { OssImage } from '@/components/common/OssImage'
 import { Badge } from '@/components/ui/badge'
@@ -23,10 +23,14 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { usePlanDetailStore } from '@/store/draft-box/planDetailStore'
 import { getPlatformInfoSync } from '@/store/platformMetadata'
+import { usePluginStore } from '@/store/plugin'
+import { useUserStore } from '@/store/user'
 import { cn } from '@/utils/className'
 import { useContainerMasonryColumns } from '../hooks/useContainerMasonryColumns'
+import { usePublishSubmissionFilterStore } from '../store/publishSubmissionFilterStore'
 import { AllListSection } from './AllListSection'
 import { BatchActionBar } from './BatchActionBar'
 import { ConditionalDeleteDialog } from './ConditionalDeleteDialog'
@@ -260,6 +264,37 @@ export const DraftListSection = memo(({
   const visibleTabs = useMemo(() => tabs.length > 0 ? tabs : DEFAULT_DRAFT_LIST_TABS, [tabs])
   const resolvedDefaultTab = visibleTabs.includes(defaultTab) ? defaultTab : visibleTabs[0]
   const [activeTab, setActiveTab] = useState<DraftListSectionTab>(resolvedDefaultTab)
+  const materialsFilter = usePlanDetailStore(state => state.materialsFilter)
+  const userId = useUserStore(state => state.userInfo?.id)
+  const filterHydrated = usePublishSubmissionFilterStore(state => state._hasHydrated)
+  const savedUnsubmitted = usePublishSubmissionFilterStore(state => userId ? state.wxSphUnsubmittedByUser[userId] ?? false : false)
+  const onlyUnsubmitted = enablePublishDrag && filterHydrated && savedUnsubmitted
+  useEffect(() => {
+    if (!enablePublishDrag || !filterHydrated || !userId)
+      return
+    const expected = savedUnsubmitted ? PlatType.WxSph : undefined
+    const state = usePlanDetailStore.getState()
+    if (state.materialsFilter.excludeSubmittedAccountType !== expected)
+      state.setMaterialsFilter({ ...state.materialsFilter, excludeSubmittedAccountType: expected })
+  }, [enablePublishDrag, filterHydrated, userId, savedUnsubmitted, materialGroupId, materialsFilter.excludeSubmittedAccountType])
+  const completedPluginTasks = usePluginStore(state => state.publishTasks
+    .flatMap(task => task.platformTasks)
+    .filter(task => task.status === 'completed')
+    .map(task => `${task.requestId}:${task.endTime}`)
+    .join(','))
+  useEffect(() => {
+    if (enablePublishDrag && onlyUnsubmitted && materialGroupId)
+      void usePlanDetailStore.getState().fetchMaterials(materialGroupId, 1)
+  }, [enablePublishDrag, onlyUnsubmitted, materialGroupId, completedPluginTasks])
+  useEffect(() => {
+    if (!enablePublishDrag)
+      return
+    return () => {
+      const state = usePlanDetailStore.getState()
+      if (state.materialsFilter.excludeSubmittedAccountType)
+        state.setMaterialsFilter({ ...state.materialsFilter, excludeSubmittedAccountType: undefined })
+    }
+  }, [enablePublishDrag])
   const hasAllTab = visibleTabs.includes('all')
   const hasDraftsTab = visibleTabs.includes('drafts')
   const hasVideoTab = visibleTabs.includes('video')
@@ -270,8 +305,8 @@ export const DraftListSection = memo(({
 
   // materialGroupId 变化时，默认选中配置的 Tab
   useEffect(() => {
-    setActiveTab(resolvedDefaultTab)
-  }, [materialGroupId, resolvedDefaultTab])
+    setActiveTab(onlyUnsubmitted ? 'drafts' : resolvedDefaultTab)
+  }, [materialGroupId, resolvedDefaultTab, onlyUnsubmitted])
 
   // 无限滚动加载触发器（使用 callback ref + state，确保 Tab 切换后 observer 能正确绑定）
   const [loadMoreElement, setLoadMoreElement] = useState<HTMLDivElement | null>(null)
@@ -350,13 +385,15 @@ export const DraftListSection = memo(({
     exitDraftBatchMode()
     exitMediaBatchMode()
 
+    if (onlyUnsubmitted && value !== 'drafts')
+      return
     setActiveTab(value as DraftListSectionTab)
 
     // 草稿 Tab 无独立列表组件，仍在这里兜底首次加载；媒体/全部 Tab 交由各自内容组件加载。
     if (value === 'drafts' && !usePlanDetailStore.getState().materialsInitialized && materialGroupId) {
       fetchMaterials(materialGroupId, 1)
     }
-  }, [materialGroupId, exitDraftBatchMode, exitMediaBatchMode, fetchMaterials, visibleTabs])
+  }, [materialGroupId, exitDraftBatchMode, exitMediaBatchMode, fetchMaterials, visibleTabs, onlyUnsubmitted])
 
   // IntersectionObserver 实现无限滚动
   useEffect(() => {
@@ -475,10 +512,36 @@ export const DraftListSection = memo(({
 
   // 骨架屏内容
   // TabsList 组件
+  const submissionFilter = enablePublishDrag && hasDraftsTab ? (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!filterHydrated || !userId}
+            aria-pressed={onlyUnsubmitted}
+            aria-label={tMaterial('mediaManagement.onlyUnsubmittedWxSph')}
+            className={cn('ml-auto shrink-0 cursor-pointer gap-1.5', onlyUnsubmitted && 'border-primary/40 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary')}
+            onClick={() => {
+              if (userId)
+                usePublishSubmissionFilterStore.getState().setWxSphUnsubmitted(userId, !onlyUnsubmitted)
+            }}
+          >
+            <OssImage src={AccountPlatInfoMap.get(PlatType.WxSph)!.icon} alt="" width={16} height={16} className="h-4 w-4 shrink-0" unoptimized />
+            {tMaterial('mediaManagement.unsubmitted')}
+            {onlyUnsubmitted && <Check className="h-3.5 w-3.5" />}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{tMaterial('mediaManagement.onlyUnsubmittedWxSph')}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  ) : null
   const tabsList = showTabsList ? (
     <TabsList className={useContainerResponsive ? 'grid h-auto w-full grid-cols-4 gap-1 @min-[640px]:inline-flex @min-[640px]:w-auto' : 'grid h-auto w-full grid-cols-4 gap-1 sm:inline-flex sm:w-auto'}>
       {hasAllTab && (
-        <TabsTrigger value="all" className={useContainerResponsive ? 'min-w-0 cursor-pointer px-2 text-xs @min-[640px]:px-3 @min-[640px]:text-sm' : 'cursor-pointer min-w-0 px-2 text-xs sm:px-3 sm:text-sm'}>
+        <TabsTrigger disabled={onlyUnsubmitted} value="all" className={useContainerResponsive ? 'min-w-0 cursor-pointer px-2 text-xs @min-[640px]:px-3 @min-[640px]:text-sm' : 'cursor-pointer min-w-0 px-2 text-xs sm:px-3 sm:text-sm'}>
           {tMaterial('mediaManagement.all')}
           {allTotal > 0 && (
             <Badge variant="secondary" className={tabCountBadgeClassName}>
@@ -498,7 +561,7 @@ export const DraftListSection = memo(({
         </TabsTrigger>
       )}
       {hasVideoTab && (
-        <TabsTrigger value="video" className={useContainerResponsive ? 'min-w-0 cursor-pointer px-2 text-xs @min-[640px]:px-3 @min-[640px]:text-sm' : 'cursor-pointer min-w-0 px-2 text-xs sm:px-3 sm:text-sm'}>
+        <TabsTrigger disabled={onlyUnsubmitted} value="video" className={useContainerResponsive ? 'min-w-0 cursor-pointer px-2 text-xs @min-[640px]:px-3 @min-[640px]:text-sm' : 'cursor-pointer min-w-0 px-2 text-xs sm:px-3 sm:text-sm'}>
           {tMaterial('mediaManagement.video')}
           {videoTotal > 0 && (
             <Badge variant="secondary" className={tabCountBadgeClassName}>
@@ -508,7 +571,7 @@ export const DraftListSection = memo(({
         </TabsTrigger>
       )}
       {hasImgTab && (
-        <TabsTrigger value="img" className={useContainerResponsive ? 'min-w-0 cursor-pointer px-2 text-xs @min-[640px]:px-3 @min-[640px]:text-sm' : 'cursor-pointer min-w-0 px-2 text-xs sm:px-3 sm:text-sm'}>
+        <TabsTrigger disabled={onlyUnsubmitted} value="img" className={useContainerResponsive ? 'min-w-0 cursor-pointer px-2 text-xs @min-[640px]:px-3 @min-[640px]:text-sm' : 'cursor-pointer min-w-0 px-2 text-xs sm:px-3 sm:text-sm'}>
           {tMaterial('mediaManagement.image')}
           {imgTotal > 0 && (
             <Badge variant="secondary" className={tabCountBadgeClassName}>
@@ -520,16 +583,23 @@ export const DraftListSection = memo(({
     </TabsList>
   ) : null
 
+  const navigationBar = (tabsList || submissionFilter) && (
+    <div className={cn(
+      useContainerResponsive ? 'px-4 pt-4 @min-[640px]:px-6 @min-[640px]:pt-6' : 'px-4 pt-4 sm:px-6 sm:pt-6',
+      submissionFilter && 'flex flex-wrap items-center gap-2',
+    )}
+    >
+      {tabsList && (submissionFilter ? <div className="min-w-0 flex-[1_0_16rem]">{tabsList}</div> : tabsList)}
+      {submissionFilter}
+    </div>
+  )
+
   // 初始加载骨架屏
   if (materialsLoading && materials.length === 0) {
     return (
       <Tabs ref={useContainerResponsive ? containerRef : undefined} value={activeTab} onValueChange={handleTabChange} className="w-full">
         <Card>
-          {tabsList && (
-            <div className={useContainerResponsive ? 'px-4 pt-4 @min-[640px]:px-6 @min-[640px]:pt-6' : 'px-4 pt-4 sm:px-6 sm:pt-6'}>
-              {tabsList}
-            </div>
-          )}
+          {navigationBar}
           <CardHeader className={useContainerResponsive ? 'px-4 pb-4 pt-4 @min-[640px]:px-6' : 'px-4 pb-4 pt-4 sm:px-6'}>
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -570,11 +640,7 @@ export const DraftListSection = memo(({
   return (
     <Tabs ref={useContainerResponsive ? containerRef : undefined} value={activeTab} onValueChange={handleTabChange} className="w-full">
       <Card>
-        {tabsList && (
-          <div className={useContainerResponsive ? 'px-4 pt-4 @min-[640px]:px-6 @min-[640px]:pt-6' : 'px-4 pt-4 sm:px-6 sm:pt-6'}>
-            {tabsList}
-          </div>
-        )}
+        {navigationBar}
         <CardHeader className={useContainerResponsive ? 'px-4 pb-4 pt-4 @min-[640px]:px-6' : 'px-4 pb-4 pt-4 sm:px-6'}>
           <div className={useContainerResponsive ? 'flex flex-col gap-3 @min-[640px]:flex-row @min-[640px]:items-center @min-[640px]:justify-between' : 'flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'}>
             <div className={useContainerResponsive ? 'flex items-center justify-between gap-3 @min-[640px]:min-w-0 @min-[640px]:flex-1 @min-[640px]:justify-start' : 'flex items-center justify-between gap-3 sm:min-w-0 sm:flex-1 sm:justify-start'}>

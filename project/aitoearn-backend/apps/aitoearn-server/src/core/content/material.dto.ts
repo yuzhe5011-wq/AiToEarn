@@ -50,6 +50,7 @@ export const MaterialFilterSchema = z.object({
   status: z.enum(MaterialStatus, { message: '草稿状态' }).optional(),
   type: z.enum(MaterialType, { message: '草稿类型' }).optional(),
   useCount: z.coerce.number().optional().describe('最小使用次数'),
+  excludeSubmittedAccountType: z.enum(AccountType).optional().describe('排除该平台已接受或已发布的草稿'),
 })
 
 export class MaterialFilterDto extends createZodDto(MaterialFilterSchema) { }

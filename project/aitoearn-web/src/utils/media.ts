@@ -214,21 +214,31 @@ export function getAudioDuration(file: File): Promise<number> {
 }
 
 /** 获取视频元信息：时长 + 宽高 */
-export function getVideoMeta(file: File): Promise<{ duration: number, width: number, height: number }> {
+export function getVideoMeta(file: File | string): Promise<{ duration: number, width: number, height: number }> {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video')
     video.preload = 'metadata'
-    const cleanup = () => { URL.revokeObjectURL(video.src); video.remove() }
+    const cleanup = () => {
+      clearTimeout(timeout)
+      if (typeof file !== 'string')
+        URL.revokeObjectURL(video.src)
+      video.onloadedmetadata = null
+      video.onerror = null
+      video.removeAttribute('src')
+      video.load()
+      video.remove()
+    }
+    const timeout = setTimeout(() => { cleanup(); reject(new Error('Video metadata loading timed out')) }, 30000)
     video.onloadedmetadata = () => {
       resolve({
-        duration: Math.round(video.duration * 10) / 10,
+        duration: typeof file === 'string' ? video.duration : Math.round(video.duration * 10) / 10,
         width: video.videoWidth,
         height: video.videoHeight,
       })
       cleanup()
     }
     video.onerror = () => { cleanup(); reject(new Error('Failed to load video metadata')) }
-    video.src = URL.createObjectURL(file)
+    video.src = typeof file === 'string' ? file : URL.createObjectURL(file)
   })
 }
 

@@ -88,3 +88,5 @@ OSS 上传、媒体库、草稿素材、素材组与公开素材查询。
 ## 草稿箱排序
 
 `apiReorderMaterialGroups` 调用 `POST material/group/order`，请求类型为 `MaterialGroupOrderParams`（`ids: string[]`）。顺序按账号保存；仅允许修改本人草稿箱，未包含的草稿箱保持相对顺序排在后面。列表接口按保存后的顺序分页，新建草稿箱置顶。
+
+发布页左栏支持“视频号图标＋未提交”，通过 `excludeSubmittedAccountType=wxSph` 在后端排除该用户、该平台状态为 Published 或 PlatformScheduled 的草稿 ID 后再分页；回查失败仍排除，提交失败仍可选，成功次数不变。

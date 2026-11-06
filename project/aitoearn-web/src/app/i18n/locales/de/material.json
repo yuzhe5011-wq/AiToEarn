@@ -100,7 +100,9 @@
     "createDraftTaskMore": "{{count}} weitere Aufgabe(n) laufen noch",
     "createDraftTaskDoNotClose": "Die Aufgabe läuft auf dieser Seite weiter. Sie können im Entwurfsordner weiterarbeiten, aber schließen oder aktualisieren Sie diese Seite bitte nicht.",
     "createDraftTaskCompactTitle": "{{count}} Entwurfsaufgabe(n) laufen",
-    "createDraftTaskCompactDesc": "Zum Erweitern tippen und diese Seite geöffnet lassen"
+    "createDraftTaskCompactDesc": "Zum Erweitern tippen und diese Seite geöffnet lassen",
+    "onlyUnsubmittedWxSph": "Nur Entwürfe anzeigen, die noch nicht an WeChat Channels übermittelt wurden",
+    "unsubmitted": "Nicht gesendet"
   },
   "aiGenerate": {
     "title": "KI-Tools",

@@ -170,9 +170,14 @@ export class MaterialService {
       status?: MaterialStatus
       ids?: string[]
       useCount?: number
+      excludeSubmittedAccountType?: AccountType
     },
   ) {
-    const res = await this.materialRepository.getList(filter, page)
+    const { excludeSubmittedAccountType, ...materialFilter } = filter
+    const excludedIds = excludeSubmittedAccountType && filter.userId
+      ? await this.publishRecordRepository.listMaterialIdsByUserIdAndAccountTypeAndStatuses(filter.userId, excludeSubmittedAccountType)
+      : undefined
+    const res = await this.materialRepository.getList({ ...materialFilter, ...(excludedIds && { excludedIds }) }, page)
     return { ...res, list: await this.withPublishCounts(res.list) }
   }
 

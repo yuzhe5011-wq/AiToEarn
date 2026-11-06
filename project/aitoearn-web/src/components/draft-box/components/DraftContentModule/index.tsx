@@ -152,23 +152,27 @@ function DraftContentModule({
     if (!publishDialogOpen || !publishingDraft)
       return
 
-    const timer = setTimeout(async () => {
+    let started = false
+    let cancelled = false
+    const prefill = () => {
       const store = usePublishDialog.getState()
-      if (!store.pubListChoosed?.length) {
+      if (started || !store.pubListChoosed?.length)
         return
-      }
-
+      started = true
       store.setPrefillLoading(true)
-      try {
-        store.setAccountAllParams(await buildPublishParamsFromDraft(publishingDraft))
-      }
-      finally {
-        store.setPrefillLoading(false)
-      }
-    }, 500)
-
+      void buildPublishParamsFromDraft(publishingDraft).then((params) => {
+        if (!cancelled)
+          usePublishDialog.getState().setAccountAllParams(params)
+      }).finally(() => {
+        if (!cancelled)
+          usePublishDialog.getState().setPrefillLoading(false)
+      })
+    }
+    const unsubscribe = usePublishDialog.subscribe(prefill)
+    prefill()
     return () => {
-      clearTimeout(timer)
+      cancelled = true
+      unsubscribe()
       usePublishDialog.getState().setPrefillLoading(false)
     }
   }, [publishDialogOpen, publishingDraft])

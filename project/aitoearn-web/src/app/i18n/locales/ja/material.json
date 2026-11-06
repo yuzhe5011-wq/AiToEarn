@@ -100,7 +100,9 @@
     "createDraftTaskMore": "さらに {{count}} 件のタスクを実行中です",
     "createDraftTaskDoNotClose": "タスクはこのページ上で実行され続けます。下書きボックスの操作は続けられますが、このページを閉じたり更新したりしないでください。",
     "createDraftTaskCompactTitle": "{{count}} 件の下書き生成を実行中",
-    "createDraftTaskCompactDesc": "タップして詳細を表示し、このページを開いたままにしてください"
+    "createDraftTaskCompactDesc": "タップして詳細を表示し、このページを開いたままにしてください",
+    "onlyUnsubmittedWxSph": "動画チャンネルに未送信の下書きのみ表示",
+    "unsubmitted": "未送信"
   },
   "aiGenerate": {
     "title": "AIツール",
