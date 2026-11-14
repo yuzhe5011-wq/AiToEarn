@@ -23,6 +23,7 @@
     "dataAnalysis": "데이터 분석"
   },
   "detail": {
+    "playVideo": "동영상 재생",
     "targetPlatforms": "대상 플랫폼",
     "selectPlatforms": "플랫폼",
     "platformsSelected": "{{count}}개 플랫폼",

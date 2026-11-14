@@ -7,8 +7,8 @@
 'use client'
 
 import type { PromotionMaterial } from '@/api/materials/material.types'
-import { ArrowRightLeft, Edit, Image as ImageIcon, Loader2, Send, Trash2 } from 'lucide-react'
-import { memo, useCallback, useState } from 'react'
+import { ArrowRightLeft, Edit, Image as ImageIcon, Loader2, Play, Send, Trash2 } from 'lucide-react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { Navigation, Pagination } from 'swiper/modules'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { useShallow } from 'zustand/react/shallow'
@@ -73,9 +73,23 @@ function MediaImage({ src, alt }: { src: string, alt: string }) {
 
 // 媒体预览组件 - 使用 Swiper 轮播
 const MediaPreview = memo(({ material }: { material: PromotionMaterial }) => {
+  const { t } = useTransClient('brandPromotion')
   const mediaList = material.mediaList || []
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isHovered, setIsHovered] = useState(false)
+  const [playingIndex, setPlayingIndex] = useState<number | null>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    const video = videoRef.current
+    return () => {
+      if (video) {
+        video.pause()
+        video.removeAttribute('src')
+        video.load()
+      }
+    }
+  }, [playingIndex])
 
   // 检查是否全是图片（非视频）
   const isAllImages = mediaList.length > 0 && !mediaList.some(m => m.type === 'video')
@@ -125,22 +139,42 @@ const MediaPreview = memo(({ material }: { material: PromotionMaterial }) => {
         loop={mediaList.length > 1}
         observer={true}
         observeParents={true}
-        onSlideChange={swiper => setCurrentIndex(swiper.realIndex)}
+        onSlideChange={(swiper) => {
+          setCurrentIndex(swiper.realIndex)
+          setPlayingIndex(null)
+        }}
         className="h-full w-full"
       >
         {mediaList.map((media, index) => (
           <SwiperSlide key={index} className="!flex items-center justify-center">
             {media.type === 'video'
               ? (
-                  <video
-                    src={media.url}
-                    controls
-                    autoPlay
-                    loop
-                    playsInline
-                    className="w-full h-full object-contain bg-muted"
-                    poster={material.coverUrl ? getOssThumbnailUrl(material.coverUrl, { width: 960, quality: 75 }) : undefined}
-                  />
+                  playingIndex === index
+                    ? (
+                        <video
+                          ref={videoRef}
+                          src={media.url}
+                          controls
+                          autoPlay
+                          playsInline
+                          className="w-full h-full object-contain bg-muted"
+                          poster={material.coverUrl ? getOssThumbnailUrl(material.coverUrl, { width: 960, quality: 75 }) : undefined}
+                        />
+                      )
+                    : (
+                        <div className="relative flex h-full w-full items-center justify-center bg-muted">
+                          {material.coverUrl && <MediaImage src={material.coverUrl} alt={material.title || t('draft.detailTitle')} />}
+                          <Button
+                            type="button"
+                            size="icon"
+                            aria-label={t('detail.playVideo')}
+                            className="absolute h-14 w-14 cursor-pointer rounded-full bg-gradient-back text-gradient-foreground shadow-sm"
+                            onClick={() => setPlayingIndex(index)}
+                          >
+                            <Play className="h-6 w-6" />
+                          </Button>
+                        </div>
+                      )
                 )
               : (
                   <MediaImage
@@ -257,7 +291,7 @@ const DraftDetailContent = memo(({ allowTransfer = true }: DraftDetailContentPro
 
       <div className="flex max-h-[90dvh] flex-col md:h-[min(760px,88dvh)] md:flex-row">
         <div className="h-[32dvh] shrink-0 border-b border-border bg-muted/40 p-3 md:h-full md:w-[52%] md:border-r md:border-b-0 md:p-5">
-          <MediaPreview material={selectedDraft} />
+          <MediaPreview key={selectedDraft.id} material={selectedDraft} />
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">

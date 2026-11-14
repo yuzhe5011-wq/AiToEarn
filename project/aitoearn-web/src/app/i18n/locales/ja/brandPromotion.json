@@ -23,6 +23,7 @@
     "dataAnalysis": "データ分析"
   },
   "detail": {
+    "playVideo": "動画を再生",
     "targetPlatforms": "ターゲットプラットフォーム",
     "selectPlatforms": "プラットフォーム",
     "platformsSelected": "{{count}} プラットフォーム",

@@ -23,6 +23,7 @@
     "dataAnalysis": "Analytique"
   },
   "detail": {
+    "playVideo": "Lire la vidéo",
     "targetPlatforms": "Plateformes cibles",
     "selectPlatforms": "Plateformes",
     "platformsSelected": "{{count}} plateformes",

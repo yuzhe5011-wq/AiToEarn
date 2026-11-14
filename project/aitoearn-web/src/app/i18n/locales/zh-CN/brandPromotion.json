@@ -37,6 +37,7 @@
     "video": "视频"
   },
   "detail": {
+    "playVideo": "播放视频",
     "title": "草稿箱详情",
     "description": "查看和管理您的草稿箱",
     "back": "返回",

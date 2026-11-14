@@ -37,6 +37,7 @@
     "video": "Video"
   },
   "detail": {
+    "playVideo": "Play video",
     "title": "Draft Box Details",
     "description": "View and manage your draft box",
     "back": "Back",
